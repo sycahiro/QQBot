@@ -7,7 +7,7 @@ import {
 } from '../components/record-browser';
 import { useConfirm } from '../components/confirmation';
 import { useEffect, useRef, useState } from 'react';
-import { Save, Search, Smile } from 'lucide-react';
+import { ImagePlus, Save, Search, Smile } from 'lucide-react';
 import type { Sticker } from '../business';
 
 import { Notice } from '../components/notice';
@@ -39,6 +39,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
         working = useRef(false),
         draftRef = useRef(draft);
     draftRef.current = draft;
+    const importInput = useRef<HTMLInputElement>(null);
     const selected = items.some((i) => i.id === chosen) ? chosen : items[0]?.id || null;
     const current = items.find((i) => i.id === selected);
     const selection = useRef(selected);
@@ -130,6 +131,41 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
             if (mounted.current) setBusy(false);
         }
     };
+    const importFile = async (file: File) => {
+        if (working.current) return;
+        if (file.size > 20 * 1024 * 1024) {
+            setError('图片文件超过 20 MB 上限，请先压缩再添加');
+            return;
+        }
+        working.current = true;
+        setBusy(true);
+        setError('');
+        setNotice('');
+        try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = () => reject(new Error('read failed'));
+                reader.readAsDataURL(file);
+            });
+            const data = dataUrl.split(',')[1] || '';
+            const result = await window.pywebview!.api.import_sticker(data, '', [], '', account);
+            if (!mounted.current) return;
+            if (result.ok && result.account === account) {
+                setNotice(
+                    result.item.duplicate
+                        ? '这张图片已经在表情库里了。'
+                        : '已添加到表情库，可选中后补充备注和标签。',
+                );
+                refresh((v) => v + 1);
+            } else if (!result.ok) setError(result.error.message);
+        } catch {
+            if (mounted.current) setError('添加失败，请重新选择图片');
+        } finally {
+            working.current = false;
+            if (mounted.current) setBusy(false);
+        }
+    };
     const remove = async (all: boolean) => {
         if (working.current || (!all && !selected)) return;
         if (
@@ -185,6 +221,30 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                 remove={{ disabled: busy || !selected, run: () => void remove(false) }}
                 clear={{ disabled: busy || !items.length, run: () => void remove(true) }}
                 refresh={{ disabled: busy, run: () => refresh((v) => v + 1) }}
+                actions={
+                    <>
+                        <input
+                            ref={importInput}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            hidden
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = '';
+                                if (file) void importFile(file);
+                            }}
+                        />
+                        <button
+                            type="button"
+                            className="qq-refresh"
+                            disabled={busy}
+                            onClick={() => importInput.current?.click()}
+                        >
+                            <ImagePlus size={14} />
+                            添加表情
+                        </button>
+                    </>
+                }
             />
             <form
                 className="archive-search"
@@ -224,7 +284,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                     }
                 >
                     <p>在聊天存档中点击“收藏首张图片”即可添加表情。</p>
-                    <p>也可在机器人设置中允许模型收藏。</p>
+                    <p>也可以点上方「添加表情」从本地图片导入。</p>
                 </RecordEmpty>
             ) : (
                 <RecordBrowser

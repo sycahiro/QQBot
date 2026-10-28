@@ -1,8 +1,10 @@
 """向自有窗口提供应用信息、只读 QQ 检测和就绪回执。"""
 
 import asyncio
+import base64
 import json
 import logging
+import os
 import platform
 import sqlite3
 import threading
@@ -11,6 +13,7 @@ import webbrowser
 from functools import wraps
 
 from ..agent.config import allowed
+from ..agent.images import prepare_image
 from ..agent.llm import ModelError
 from ..agent.memory_review import MemoryReviews
 from ..agent.models import ModelChecks
@@ -29,6 +32,7 @@ from ..extensions.market import MarketCatalog, page_url
 from ..qq.discovery import DiscoveryError
 from ..qq.engine import EngineError
 from ..qq.selection import AccountSelection
+from ..qq.snowluma import ONEBOT_DEFAULT_CONFIG
 from . import contacts, debug, dependencies
 from .appearance import Appearance
 from .debug_files import DebugFiles
@@ -180,6 +184,86 @@ class DesktopBridge:
                         "error": {"code": error.code, "message": str(error)}}
         status = self._discovery.stop_service()
         return {"ok": True, "stage": status["stage"]}
+
+    # -- 引擎设置（onebot.json 的受控字段，其余键原样保留） -----------------
+
+    @staticmethod
+    def _validate_engine_settings(status_command, history_sync):
+        if not isinstance(status_command, dict) or not isinstance(history_sync, dict):
+            raise ValueError("引擎设置格式无效")
+        if set(status_command) != {"enabled", "swallow", "cooldownSeconds", "trigger"}:
+            raise ValueError("状态命令设置字段不完整")
+        if not isinstance(history_sync, dict) or set(history_sync) != {"enabled"}:
+            raise ValueError("历史回填设置字段不完整")
+        enabled, swallow, cooldown, trigger = (
+            status_command["enabled"],
+            status_command["swallow"],
+            status_command["cooldownSeconds"],
+            status_command["trigger"],
+        )
+        if type(enabled) is not bool or type(swallow) is not bool:
+            raise ValueError("状态命令开关必须是布尔值")
+        if type(cooldown) is not int or not 0 <= cooldown <= 3600:
+            raise ValueError("状态命令冷却必须是 0 到 3600 的整数秒")
+        if not isinstance(trigger, str) or not 1 <= len(trigger.strip()) <= 32:
+            raise ValueError("触发词必须是 1 到 32 个字符")
+        if type(history_sync["enabled"]) is not bool:
+            raise ValueError("历史回填开关必须是布尔值")
+        return {
+            "statusCommand": {
+                "enabled": enabled,
+                "swallow": swallow,
+                "cooldownSeconds": cooldown,
+                "trigger": trigger.strip(),
+            },
+            "historySync": {"enabled": history_sync["enabled"]},
+        }
+
+    def get_engine_settings(self):
+        def read():
+            config_file = self._paths.snowluma_onebot_config
+            if config_file.exists():
+                try:
+                    current = json.loads(config_file.read_text(encoding="utf-8"))
+                except (OSError, ValueError) as error:
+                    raise ValueError("引擎配置无法读取，请检查 data/services/snowluma") from error
+                if not isinstance(current, dict):
+                    raise ValueError("引擎配置格式无效")
+            else:
+                current = json.loads(json.dumps(ONEBOT_DEFAULT_CONFIG))
+            return {
+                "statusCommand": current.get("statusCommand"),
+                "historySync": current.get("historySync"),
+                "engineConfigured": config_file.exists(),
+            }
+
+        return self._business(read)
+
+    def save_engine_settings(self, status_command, history_sync):
+        def save():
+            sections = self._validate_engine_settings(status_command, history_sync)
+            config_file = self._paths.snowluma_onebot_config
+            if config_file.exists():
+                try:
+                    config = json.loads(config_file.read_text(encoding="utf-8"))
+                except (OSError, ValueError) as error:
+                    raise ValueError("引擎配置无法读取，请检查 data/services/snowluma") from error
+                if not isinstance(config, dict):
+                    raise ValueError("引擎配置格式无效")
+            else:
+                config = json.loads(json.dumps(ONEBOT_DEFAULT_CONFIG))
+            config["statusCommand"] = sections["statusCommand"]
+            config["historySync"] = sections["historySync"]
+            config_file.parent.mkdir(parents=True, exist_ok=True)
+            temporary = config_file.with_suffix(".tmp")
+            temporary.write_text(json.dumps(config, indent=2), encoding="utf-8")
+            os.replace(temporary, config_file)
+            return {
+                "statusCommand": config["statusCommand"],
+                "historySync": config["historySync"],
+            }
+
+        return self._business(save)
 
     @_guarded
     def get_qq_processes(self):
@@ -1087,6 +1171,32 @@ class DesktopBridge:
         return self._business(
             collect, cancel_code="SOURCE_CHANGED", cancel_message="账号或图片消息已变化，收藏已停止"
         )
+
+    def import_sticker(self, data, note, tags, usage, account):
+        """手动导入本地图片到表情库：base64 原始文件字节，清洗与收藏同一管线。"""
+
+        def save():
+            if not isinstance(account, str):
+                raise ValueError("请刷新页面确认机器人账号")
+            selected = self._account(account)
+            if self._stickers is None:
+                raise ValueError("表情库尚未就绪")
+            if not isinstance(data, str) or not data:
+                raise ValueError("请先选择图片文件")
+            if len(data) > 20 * 1024 * 1024:
+                raise ValueError("图片文件超过 20 MB 上限")
+            try:
+                raw = base64.b64decode(data, validate=True)
+            except ValueError as error:
+                raise ValueError("图片数据无效，请重新选择文件") from error
+            prepared = prepare_image(raw)
+            self._account(selected)
+            return {
+                "account": selected,
+                "item": self._stickers.add(selected, prepared, note, tags, usage, source=None),
+            }
+
+        return self._business(save)
 
     def get_diagnostics(self):
         def read():

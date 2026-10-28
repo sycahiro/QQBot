@@ -9,6 +9,7 @@ import {
     Info,
     Monitor,
     Moon,
+    Bot,
     SlidersHorizontal,
     Sun,
     UserRound,
@@ -19,6 +20,7 @@ import { ResidenceSettings } from '../residence';
 import { useTabNavigation } from '../components/tab-navigation';
 import { Configuration } from './configuration';
 import { About } from './about';
+import { EngineSettings } from './engine';
 import { MediaSettings } from './media';
 import { NetworkSettings } from './network';
 import { StorageSettings } from './storage';
@@ -29,6 +31,7 @@ const tabs = [
     { id: 'persona', label: '默认人设', icon: UserRound },
     { id: 'media', label: '图片处理', icon: Image },
     { id: 'search', label: '联网', icon: Globe },
+    { id: 'engine', label: '引擎', icon: Bot },
     { id: 'storage', label: '存储', icon: HardDrive },
     { id: 'about', label: '关于', icon: Info },
 ] as const;
@@ -110,6 +113,8 @@ export function SystemSettings({
                             <MediaSettings ready={Boolean(info)} />
                         ) : tab === 'search' ? (
                             <NetworkSettings ready={Boolean(info)} />
+                        ) : tab === 'engine' ? (
+                            <EngineSettings ready={Boolean(info)} />
                         ) : tab === 'storage' ? (
                             <StorageSettings ready={Boolean(info)} />
                         ) : tab === 'persona' ? (

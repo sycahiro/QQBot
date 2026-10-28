@@ -27,6 +27,11 @@ class DesktopPaths:
     def snowluma_data(self):
         return self.snowluma_home / "default" / "data"
 
+    @property
+    def snowluma_onebot_config(self):
+        """OneBot 受控配置（含状态命令等引擎行为设置）。"""
+        return self.snowluma_home / "config" / "onebot.json"
+
     @classmethod
     def discover(cls, runtime: str | None = None):
         root = Path(__file__).resolve().parents[4]

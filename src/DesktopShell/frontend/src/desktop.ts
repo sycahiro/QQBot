@@ -45,6 +45,13 @@ export interface DependencyInventory {
 }
 export type ConfigurationResult<T> = ApiResult<T & { account?: string; scope?: 'global' }>;
 
+export interface EngineStatusCommand {
+    enabled: boolean;
+    swallow: boolean;
+    cooldownSeconds: number;
+    trigger: string;
+}
+
 export interface DesktopOptions {
     trayEnabled: boolean;
     startup: boolean;
@@ -172,6 +179,22 @@ declare global {
                           error: { code: string; message: string };
                       }
                 >;
+                get_engine_settings(): Promise<
+                    ApiResult<{
+                        statusCommand: EngineStatusCommand | null;
+                        historySync: { enabled: boolean } | null;
+                        engineConfigured: boolean;
+                    }>
+                >;
+                save_engine_settings(
+                    statusCommand: EngineStatusCommand,
+                    historySync: { enabled: boolean },
+                ): Promise<
+                    ApiResult<{
+                        statusCommand: EngineStatusCommand;
+                        historySync: { enabled: boolean };
+                    }>
+                >;
                 select_qq_account(
                     target: { pid: number; processKey: string; uin: string } | null,
                 ): Promise<QqSelectionResult>;
@@ -281,6 +304,18 @@ declare global {
                 collect_sticker(
                     key: string,
                     mid: string,
+                    account: string,
+                ): Promise<
+                    ApiResult<{
+                        account: string;
+                        item: Sticker & { collected: boolean; duplicate: boolean };
+                    }>
+                >;
+                import_sticker(
+                    data: string,
+                    note: string,
+                    tags: string[],
+                    usage: string,
                     account: string,
                 ): Promise<
                     ApiResult<{

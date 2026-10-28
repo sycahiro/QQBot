@@ -1,0 +1,29 @@
+{
+  "name": "qqbot-desktop-private",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test frontend/tests/*.test.mjs",
+    "format": "prettier --write frontend/src frontend/tests",
+    "format:check": "prettier --check frontend/src frontend/tests",
+    "typecheck": "tsc -p frontend/tsconfig.json --noEmit"
+  },
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "dependencies": {
+    "lucide-react": "0.469.0",
+    "motion": "12.38.0",
+    "react": "19.2.5",
+    "react-dom": "19.2.5",
+    "typescript": "6.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "prettier": "3.9.10",
+    "vite": "8.1.6"
+  }
+}

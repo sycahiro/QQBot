@@ -29,7 +29,6 @@ from ..extensions.market import MarketCatalog, page_url
 from ..qq.discovery import DiscoveryError
 from ..qq.engine import EngineError
 from ..qq.selection import AccountSelection
-from ..storage.messages import chat_key
 from . import contacts, debug, dependencies
 from .appearance import Appearance
 from .debug_files import DebugFiles

@@ -140,7 +140,7 @@ function Install-PythonBase($plan) {
         $expanded = Join-Path $temp 'x'
         New-Item -ItemType Directory -Path $expanded -Force | Out-Null
         Write-Info '解压 CPython…'
-        tar -xzf $archive -C $expanded
+        & "$env:SystemRoot\System32\tar.exe" -xzf $archive -C $expanded
         if ($LASTEXITCODE -ne 0) { throw '解压 CPython 失败' }
         $payload = Join-Path $expanded 'python'
         if (-not (Test-Path -LiteralPath (Join-Path $payload 'python.exe') -PathType Leaf)) {

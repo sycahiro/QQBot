@@ -62,6 +62,25 @@ class Sender:
                     raise ValueError("messages 包含错误的数组包装；请使用真正的字符串数组")
                 values = [values]
         if isinstance(values, list):
+            for value in values:
+                if isinstance(value, str):
+                    stripped = value.strip()
+                    if (
+                        0 < len(stripped) <= 80000
+                        and stripped.startswith("[")
+                        and stripped.endswith("]")
+                    ):
+                        try:
+                            decoded = json.loads(stripped)
+                        except ValueError:
+                            decoded = None
+                        if not isinstance(decoded, list) and re.match(r'^\[\s*"', stripped):
+                            # 合法 JSON 原文是允许的正文（用户要求时）；解析失败又长
+                            # 得像损坏的字符串数组，才是模型把参数误写进正文。
+                            raise ValueError(
+                                "messages 元素像是被再次编码的数组；请直接使用字符串数组，"
+                                "每个元素写纯文本正文，不要把数组或引号塞进正文"
+                            )
             values = [
                 value.replace("\x00", "").strip() if isinstance(value, str) else value
                 for value in values

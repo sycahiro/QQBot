@@ -76,7 +76,7 @@ def content_parts(content, protocol, role):
                     source = {"type": "url", "url": url}
                 result.append({"type": "image", "source": source})
         else:
-            raise ValueError("当前协议不支持此媒体类型，请使用视频抽帧模式")
+            raise ValueError("当前协议不支持此媒体类型")
     return result
 
 

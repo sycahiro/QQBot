@@ -717,7 +717,14 @@ def test_same_chat_batches_and_different_chats_concurrency_is_bounded(stack):
     assert peak[0] == 2 and len(entered) == 3
     assert all(s["triggerText"] == "友: 消息2" for s in sessions.list(ACCOUNT))
     assert all(
-        len(messages[1]["content"].split("【本次新消息】\n")[1].splitlines()) == 2
+        # 末尾的【本次回应的硬性要求】是追加的提醒行，先剥掉再数聚批行数。
+        len(
+            messages[1]["content"]
+            .split("【本次新消息】\n")[1]
+            .split("\n\n【本次回应的硬性要求】")[0]
+            .splitlines()
+        )
+        == 2
         for messages in entered
     )
 

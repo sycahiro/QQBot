@@ -7,7 +7,7 @@ from qqbot.desktop.paths import DesktopPaths
 
 def test_inventory_reads_manifests_and_installed_packages(tmp_path, monkeypatch):
     paths = DesktopPaths(tmp_path, tmp_path / "runtime")
-    requirements = tmp_path / "tools" / "python" / "requirements.txt"
+    requirements = tmp_path / "tools" / "requirements.txt"
     requirements.parent.mkdir(parents=True)
     requirements.write_text("httpx\n# 开发检查工具\npytest\n", encoding="utf-8")
     manifest = tmp_path / "src" / "DesktopShell" / "package.json"

@@ -65,6 +65,7 @@ export interface BotConfig {
         sendImages: boolean;
     };
     persona: { roleText: string; customRules: string };
+    defaultPersona: { roleText: string; customRules: string };
     allow: { groups: string[]; private: string[] };
     deny: { groups: string[]; private: string[] };
     blockedUsers: string[];

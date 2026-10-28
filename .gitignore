@@ -23,9 +23,8 @@
 /upstream/
 /backup/
 /tools/node/
-# 便携 CPython 本体不入库，只保留依赖清单
-/tools/python/*
-!/tools/python/requirements.txt
+# 便携 CPython 本体不入库，依赖清单位于 tools/requirements.txt
+/tools/python/
 
 # Local dependency trees and credential files
 **/node_modules/

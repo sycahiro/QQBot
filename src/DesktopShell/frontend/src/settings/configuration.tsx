@@ -34,10 +34,12 @@ export function Configuration({
     ready,
     account,
     scope = 'bot',
+    panel = 'model',
 }: {
     ready: boolean;
     account?: string;
     scope?: 'bot' | 'global';
+    panel?: 'model' | 'persona';
 }) {
     const confirm = useConfirm();
     const { editor, state, error } = useSettings(ready, account, scope);
@@ -46,6 +48,7 @@ export function Configuration({
     const [checkError, setCheckError] = useState('');
     const [checkNotice, setCheckNotice] = useState('');
     const [saveNotice, setSaveNotice] = useState('');
+    const [loadingPersona, setLoadingPersona] = useState(false);
     const mounted = useRef(true),
         working = useRef(false);
     useEffect(() => {
@@ -198,7 +201,13 @@ export function Configuration({
             const latest = editor.getSnapshot();
             if (latest.errors[section]) setCheckError(latest.errors[section]!);
             else if (latest.saved === section)
-                setSaveNotice(remove ? '配置已删除。' : '已保存，自动回复已暂停。');
+                setSaveNotice(
+                    remove
+                        ? '配置已删除。'
+                        : section === 'defaultPersona'
+                          ? '默认人设已保存。'
+                          : '已保存，自动回复已暂停。',
+                );
         }
     };
     const toggleSticker = async (field: keyof BotConfig['sticker'], value: boolean) => {
@@ -229,6 +238,36 @@ export function Configuration({
         </div>
     );
     const pick = (id: string | null) => editor.pick(id);
+    const applyDefaultPersona = async () => {
+        if (loadingPersona || state.saving) return;
+        setLoadingPersona(true);
+        setCheckError('');
+        setCheckNotice('');
+        setSaveNotice('');
+        const before = JSON.stringify(editor.getSnapshot().draft.config.persona);
+        try {
+            const result = await window.pywebview!.api.get_global_settings();
+            if (!mounted.current) return;
+            if (!result.ok) {
+                setCheckError(result.error.message);
+                return;
+            }
+            const latest = editor.getSnapshot().draft;
+            if (JSON.stringify(latest.config.persona) !== before) {
+                setCheckError('人设已发生变化，请再次点击使用默认人设。');
+                return;
+            }
+            editor.change({
+                ...latest,
+                config: { ...latest.config, persona: { ...result.config.defaultPersona } },
+            });
+            setCheckNotice('已填入默认人设，可继续修改并保存。');
+        } catch {
+            if (mounted.current) setCheckError('读取默认人设失败，请稍后重试。');
+        } finally {
+            if (mounted.current) setLoadingPersona(false);
+        }
+    };
     return (
         <form onSubmit={(event) => event.preventDefault()} className="desktop-sections">
             <Notice
@@ -241,9 +280,57 @@ export function Configuration({
                     setSaveNotice('');
                 }}
             />
-            {scope === 'global' && <p className="action-notice">所有账号共用以下配置。</p>}
+            {scope === 'global' && panel === 'model' && (
+                <p className="action-notice">所有账号共用以下配置。</p>
+            )}
             <fieldset className="desktop-sections bot-fieldset">
-                {scope === 'global' && (
+                {scope === 'global' && panel === 'persona' && (
+                    <section className="ui-card console-panel">
+                        <div className="console-panel-heading">
+                            <div>
+                                <h2>默认人设</h2>
+                                <p>为新账号设置初始人设，也可在机器人设置中一键填入。</p>
+                            </div>
+                            <UserRound size={18} />
+                        </div>
+                        <div className="bot-form-grid">
+                            <label className="form-wide">
+                                角色设定
+                                <textarea
+                                    rows={14}
+                                    value={config.defaultPersona.roleText}
+                                    onChange={(e) =>
+                                        setConfig({
+                                            ...config,
+                                            defaultPersona: {
+                                                ...config.defaultPersona,
+                                                roleText: e.target.value,
+                                            },
+                                        })
+                                    }
+                                />
+                            </label>
+                            <label className="form-wide">
+                                补充规则
+                                <textarea
+                                    rows={3}
+                                    value={config.defaultPersona.customRules}
+                                    onChange={(e) =>
+                                        setConfig({
+                                            ...config,
+                                            defaultPersona: {
+                                                ...config.defaultPersona,
+                                                customRules: e.target.value,
+                                            },
+                                        })
+                                    }
+                                />
+                            </label>
+                        </div>
+                        {footer('defaultPersona')}
+                    </section>
+                )}
+                {scope === 'global' && panel === 'model' && (
                     <>
                         {' '}
                         <section className="ui-card console-panel">
@@ -545,6 +632,20 @@ export function Configuration({
                                 <UserRound size={18} />
                             </div>
                             <div className="bot-form-grid">
+                                <div className="form-wide">
+                                    <button
+                                        type="button"
+                                        className="qq-refresh"
+                                        disabled={loadingPersona || Boolean(state.saving)}
+                                        onClick={() => void applyDefaultPersona()}
+                                    >
+                                        <UserRound size={14} />
+                                        {loadingPersona ? '正在读取' : '使用默认人设'}
+                                    </button>
+                                    <p className="action-notice">
+                                        填入系统设置中的角色设定和补充规则，修改后请保存。
+                                    </p>
+                                </div>
                                 <label className="form-wide">
                                     角色设定
                                     <textarea

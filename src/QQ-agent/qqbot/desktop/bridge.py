@@ -547,11 +547,11 @@ class DesktopBridge:
                 raise ValueError("全局设置格式无效")
             if set(patch) == {"media", "profileId"}:
                 config = self._globals().save_media(patch["media"], patch["profileId"])
-            elif set(patch) in ({"webSearch"}, {"mediaOptions"}):
+            elif set(patch) in ({"webSearch"}, {"mediaOptions"}, {"defaultPersona"}):
                 config = self._globals().save("global", patch)
             else:
                 raise ValueError("请通过模型方案操作保存模型配置")
-            if self._agent:
+            if self._agent and set(patch) != {"defaultPersona"}:
                 self._pause_all("全局设置已保存，请确认后重新开启自动回复")
             self._reviews.invalidate()
             return {"scope": "global", "config": config}

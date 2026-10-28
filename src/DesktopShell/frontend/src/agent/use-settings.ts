@@ -93,7 +93,7 @@ export function useSettings(
                 } else if (current.getSnapshot() === observed)
                     current.reconcile(
                         result.config,
-                        scope === 'global' ? ['model', 'search'] : undefined,
+                        scope === 'global' ? ['model', 'search', 'defaultPersona'] : undefined,
                     );
                 setEditor(current);
                 setError('');

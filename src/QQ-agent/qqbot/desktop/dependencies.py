@@ -13,7 +13,7 @@ from packaging.utils import canonicalize_name
 def _python_packages(paths):
     direct = {}
     development = False
-    for line in (paths.root / "tools" / "python" / "requirements.txt").read_text(encoding="utf-8").splitlines():
+    for line in (paths.root / "tools" / "requirements.txt").read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line.startswith("#"):
             if "开发" in line:

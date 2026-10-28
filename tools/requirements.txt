@@ -1,4 +1,4 @@
-# 项目专用便携 Python（tools/python）的依赖清单，由 tools/setup.ps1 安装。
+# 项目专用便携 Python（tools/python）的依赖清单，由根目录 Install.bat 安装。
 # 不写版本号：每次重建都装当前最新。要复现某次验证过的组合，用 pip freeze 导出即可。
 # pythonnet 必须显式声明：qqbot/desktop/resident.py 直接 import clr，不能只靠 pywebview 传递。
 pywebview

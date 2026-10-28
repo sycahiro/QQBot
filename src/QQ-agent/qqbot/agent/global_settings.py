@@ -26,7 +26,7 @@ class GlobalSettings:
             if self._file.exists():
                 try:
                     raw = json.loads(self._file.read_text(encoding="utf-8"))
-                    if not isinstance(raw, dict) or set(raw) != GLOBAL_FIELDS:
+                    if not isinstance(raw, dict) or set(raw) not in (GLOBAL_FIELDS, GLOBAL_FIELDS - {"defaultPersona"}):
                         raise ValueError()
                     config.update(raw)
                     validate(config)

@@ -11,6 +11,7 @@ import {
     Moon,
     SlidersHorizontal,
     Sun,
+    UserRound,
 } from 'lucide-react';
 import type { DesktopInfo } from '../desktop';
 import type { Theme } from '../theme';
@@ -25,6 +26,7 @@ import { StorageSettings } from './storage';
 const tabs = [
     { id: 'general', label: '通用', icon: SlidersHorizontal },
     { id: 'model', label: '模型 API', icon: Cpu },
+    { id: 'persona', label: '默认人设', icon: UserRound },
     { id: 'media', label: '图片处理', icon: Image },
     { id: 'search', label: '联网', icon: Globe },
     { id: 'storage', label: '存储', icon: HardDrive },
@@ -110,6 +112,8 @@ export function SystemSettings({
                             <NetworkSettings ready={Boolean(info)} />
                         ) : tab === 'storage' ? (
                             <StorageSettings ready={Boolean(info)} />
+                        ) : tab === 'persona' ? (
+                            <Configuration ready={Boolean(info)} scope="global" panel="persona" />
                         ) : (
                             <Configuration ready={Boolean(info)} scope="global" />
                         )}

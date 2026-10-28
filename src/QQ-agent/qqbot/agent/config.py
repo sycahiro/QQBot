@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from ..storage.messages import PEER_RE, account_id
 from .media_models import DEFAULT_MEDIA, FEATURES, validate_media
+from .persona import DEFAULT_PERSONA
 from .profiles import check_api, manage_profile, public_config, validate_profiles
 from .web import (
     DEFAULT_SEARCH,
@@ -32,9 +33,10 @@ DEFAULTS = {
         "sendImages": False,
     },
     "persona": {
-        "roleText": "你是一个普通的 QQ 群友，自然、简短地聊天，按当前角色设定发言。",
+        "roleText": DEFAULT_PERSONA,
         "customRules": "",
     },
+    "defaultPersona": {"roleText": DEFAULT_PERSONA, "customRules": ""},
     "allow": {"groups": [], "private": []},
     "deny": {"groups": [], "private": []},
     "blockedUsers": [],
@@ -50,7 +52,7 @@ DEFAULTS = {
 }
 
 
-GLOBAL_FIELDS = frozenset({"api", "profiles", "activeProfileId", "webSearch", "mediaOptions"})
+GLOBAL_FIELDS = frozenset({"api", "profiles", "activeProfileId", "webSearch", "mediaOptions", "defaultPersona"})
 
 
 def id_list(value):
@@ -129,11 +131,12 @@ def validate(config):
         or any(type(v) is not bool for v in config["sticker"].values())
     ):
         raise ValueError("表情库开关格式无效")
-    persona = config["persona"]
-    if not isinstance(persona, dict) or set(persona) != set(DEFAULTS["persona"]):
-        raise ValueError("人设设置字段不完整")
-    if any(not isinstance(value, str) or len(value) > 20000 for value in persona.values()):
-        raise ValueError("人设文本过长或格式错误")
+    for field in ("persona", "defaultPersona"):
+        persona = config[field]
+        if not isinstance(persona, dict) or set(persona) != set(DEFAULTS[field]):
+            raise ValueError("人设设置字段不完整")
+        if any(not isinstance(value, str) or len(value) > 20000 for value in persona.values()):
+            raise ValueError("人设文本过长或格式错误")
     for field in ("allow", "deny"):
         if not isinstance(config[field], dict) or set(config[field]) != {"groups", "private"}:
             raise ValueError("会话名单格式错误")
@@ -178,9 +181,13 @@ class SettingsStore:
             ).fetchone()
         try:
             config = json.loads(row["value"]) if row else copy.deepcopy(DEFAULTS)
+            if isinstance(config, dict):
+                config.setdefault("defaultPersona", copy.deepcopy(DEFAULTS["defaultPersona"]))
             if self._global_settings is not None:
                 config = {**copy.deepcopy(DEFAULTS), **config, **self._global_settings.values()}
                 config["api"].update({key: config["mediaOptions"][key] for key in FEATURES})
+                if not row:
+                    config["persona"] = copy.deepcopy(config["defaultPersona"])
             config = validate(config)
         except (ValueError, TypeError, KeyError) as error:
             raise ValueError("机器人设置无法读取，原数据已保留") from error

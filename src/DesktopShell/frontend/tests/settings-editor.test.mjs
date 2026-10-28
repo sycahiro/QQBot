@@ -24,6 +24,7 @@ const config = () => ({
         videoFrames: 6,
     },
     persona: { roleText: 'original', customRules: '' },
+    defaultPersona: { roleText: 'default', customRules: 'default rules' },
     allow: { groups: [], private: [] },
     deny: { groups: [], private: [] },
     blockedUsers: [],
@@ -56,6 +57,24 @@ function editor(
     return new SettingsEditor(ACCOUNT, config(), save, profile);
 }
 
+test('saving the default persona only writes the default persona section', async () => {
+    const calls = [];
+    const e = editor(async (patch) => {
+        calls.push(patch);
+        return { ok: true, account: ACCOUNT, config: { ...config(), ...patch } };
+    });
+    const draft = e.getSnapshot().draft;
+    change(e, {
+        config: {
+            ...draft.config,
+            defaultPersona: { roleText: 'new default', customRules: 'rule' },
+        },
+    });
+    assert.ok(e.dirty('defaultPersona'));
+    await e.save('defaultPersona');
+    assert.deepEqual(calls, [{ defaultPersona: { roleText: 'new default', customRules: 'rule' } }]);
+    assert.ok(!e.dirty('defaultPersona'));
+});
 test('editing never writes until the corresponding save button is invoked', async () => {
     const calls = [];
     const e = editor(async (patch) => {

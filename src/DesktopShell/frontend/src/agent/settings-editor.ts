@@ -1,6 +1,7 @@
 import type { ApiResult, BotConfig } from '../business';
 
-export type Section = 'model' | 'persona' | 'scope' | 'advanced' | 'search' | 'sticker';
+export type Section =
+    'model' | 'persona' | 'defaultPersona' | 'scope' | 'advanced' | 'search' | 'sticker';
 export type SettingsDraft = {
     config: BotConfig;
     key: string;
@@ -105,6 +106,7 @@ function fields(draft: SettingsDraft, section: Section) {
     if (section === 'model')
         return { api: modelApi(draft), id: draft.profileId, name: draft.profileName };
     if (section === 'persona') return { persona: draft.config.persona };
+    if (section === 'defaultPersona') return { defaultPersona: draft.config.defaultPersona };
     if (section === 'scope')
         return {
             groups: draft.lists.groups,
@@ -141,6 +143,11 @@ function mergeSection(draft: SettingsDraft, saved: SettingsDraft, section: Secti
         };
     if (section === 'persona')
         return { ...draft, config: { ...draft.config, persona: saved.config.persona } };
+    if (section === 'defaultPersona')
+        return {
+            ...draft,
+            config: { ...draft.config, defaultPersona: saved.config.defaultPersona },
+        };
     if (section === 'scope')
         return {
             ...draft,
@@ -213,7 +220,15 @@ export class SettingsEditor {
     }
     reconcile(
         config: BotConfig,
-        sections: Section[] = ['model', 'persona', 'scope', 'advanced', 'search', 'sticker'],
+        sections: Section[] = [
+            'model',
+            'persona',
+            'defaultPersona',
+            'scope',
+            'advanced',
+            'search',
+            'sticker',
+        ],
     ) {
         if (this.disposed) return;
         if (!this.state.saving && !sections.some((s) => this.dirty(s))) {
@@ -340,27 +355,29 @@ export class SettingsEditor {
                           ? { sticker: snapshot.config.sticker }
                           : section === 'persona'
                             ? { persona: snapshot.config.persona }
-                            : section === 'scope'
-                              ? {
-                                    allow: {
-                                        groups: numbers(snapshot.lists.groups),
-                                        private: numbers(snapshot.lists.private),
-                                    },
-                                    groupTrigger: snapshot.config.groupTrigger,
-                                    groupKeywords: snapshot.keywords
-                                        .split(/\r?\n/)
-                                        .map((w) => w.trim())
-                                        .filter(Boolean),
-                                    groupRandomPercent: snapshot.config.groupRandomPercent,
-                                    contextLimit: snapshot.config.contextLimit,
-                                }
-                              : {
-                                    deny: {
-                                        groups: numbers(snapshot.lists.denyGroups),
-                                        private: numbers(snapshot.lists.denyPrivate),
-                                    },
-                                    blockedUsers: numbers(snapshot.lists.blocked),
-                                };
+                            : section === 'defaultPersona'
+                              ? { defaultPersona: snapshot.config.defaultPersona }
+                              : section === 'scope'
+                                ? {
+                                      allow: {
+                                          groups: numbers(snapshot.lists.groups),
+                                          private: numbers(snapshot.lists.private),
+                                      },
+                                      groupTrigger: snapshot.config.groupTrigger,
+                                      groupKeywords: snapshot.keywords
+                                          .split(/\r?\n/)
+                                          .map((w) => w.trim())
+                                          .filter(Boolean),
+                                      groupRandomPercent: snapshot.config.groupRandomPercent,
+                                      contextLimit: snapshot.config.contextLimit,
+                                  }
+                                : {
+                                      deny: {
+                                          groups: numbers(snapshot.lists.denyGroups),
+                                          private: numbers(snapshot.lists.denyPrivate),
+                                      },
+                                      blockedUsers: numbers(snapshot.lists.blocked),
+                                  };
                 result = await this.write(patch, this.account);
             }
             if (this.disposed) return;

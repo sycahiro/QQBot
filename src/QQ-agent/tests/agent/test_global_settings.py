@@ -96,6 +96,11 @@ def test_global_checks_and_profile_edits_work_without_a_connected_account(tmp_pa
         assert bridge.get_model_list(None)["models"] == ["test"]
         assert bridge.test_model_connection(None)["reply"] == "pong"
         assert not bridge.save_global_settings({"persona": {"roleText": "not-global"}})["ok"]
+        pause_count = len(calls)
+        default = {"roleText": "默认角色", "customRules": "默认规则"}
+        assert bridge.save_global_settings({"defaultPersona": default})["ok"]
+        assert bridge.get_global_settings()["config"]["defaultPersona"] == default
+        assert len(calls) == pause_count
         assert not bridge.get_bot_settings()["config"]
         assert not (tmp_path / "accounts").exists()
         assert "secret" not in json.dumps(bridge.get_global_settings())

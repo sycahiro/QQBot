@@ -1,61 +1,72 @@
 # QQBot
 
-**Windows 上的个人 QQ AI 助手** · 当前版本 **0.1.0**
+QQBot 是一个运行在 Windows 上的个人 QQ 桌面助手。它通过独立运行的 [SnowLuma](https://github.com/SnowLuma/SnowLuma) 连接已登录的 QQ，使用你配置的模型处理消息，并在桌面界面中管理聊天、记忆和设置。
 
-QQBot 是一个本地桌面工作台：通过独立的 [SnowLuma](https://github.com/SnowLuma/SnowLuma) 运行时连接电脑上已登录的个人 QQ，并使用你配置的模型处理消息。桌面界面由 React、pywebview 和 WebView2 构成。
+当前版本：**0.1.0**。
 
-## 功能
+## 能做什么
 
-- 为个人 QQ 配置自动回复、人设、聊天范围和模型方案。
-- 查看聊天存档、模型会话及用量，管理记忆和表情库。
-- 按需开启图片理解和联网搜索；动图仅读取首帧。
-- 查看连接状态、运行日志和本地存储占用，使用调试工具排查问题。
+- 设置模型 API、默认人设和每个账号的人设；按群聊或私聊范围控制自动回复。
+- 查看聊天存档、处理记录和模型用量，管理成员记忆与本地表情库。
+- 按需启用图片理解、图片发送和联网搜索；图片理解支持动图首帧。
+- 在连接页面管理 SnowLuma 与 QQ 连接，查看运行状态、日志和本地存储占用。
 
-当前版本连接个人 QQ；不提供 QQ 开放平台官方机器人或微信渠道。扩展市场用于浏览信息，暂不支持直接安装原项目的扩展。
+当前版本面向 Windows 桌面版个人 QQ。扩展页面用于浏览信息，暂不支持直接安装原项目的扩展。
 
-## 系统要求
+**音频和视频功能当前暂未加入。**如有需要，欢迎 Fork 本仓库，自行修改代码实现，也可以通过 Pull Request 提交改进。
 
-- 64 位 Windows 10 或 11。
-- 已安装并登录的 Windows 桌面版 QQ；QQ 与 SnowLuma 的版本兼容性以 [SnowLuma 官方说明](https://snowluma.github.io/)为准。
-- 联网搜索需要系统安装 Microsoft Edge；模型调用需要自行准备兼容的 API 服务及凭据。
-- 首次安装需要联网。安装脚本准备项目专用的 Python、Node.js、前端依赖、SnowLuma；缺少 WebView2 时会尝试安装微软官方运行时。
+## 使用前准备
 
-## 安装与启动
+- 64 位 Windows 10 或 Windows 11。
+- 已安装并登录的 Windows 桌面版 QQ。QQ 版本和运行环境的兼容性请查看 [SnowLuma 文档](https://snowluma.github.io/)。
+- 可用的模型 API 地址、模型名称和凭据。程序支持 Chat Completions、Responses 和 Anthropic 消息协议，具体能力取决于所选服务。
+- 首次安装需要网络连接。联网搜索使用系统 Microsoft Edge，需另行启用。
 
-1. 克隆或下载本仓库，解压到固定目录。
-2. 双击项目根目录的 `Install.bat`，等待依赖安装完成。也可以在 PowerShell 中运行：
+## 安装
 
-   ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
-   ```
+1. 下载或克隆本仓库，将文件放到一个固定目录。
+2. 双击根目录的 `Install.bat`，等待安装完成。
+3. 在项目根目录双击安装时生成的 `QQBot` 快捷方式启动。
 
-3. 双击根目录生成的 `QQBot` 快捷方式启动。`QQBot.bat` 是带命令行日志的诊断入口。
-4. 在“连接”页启动 SnowLuma 并选择本机已登录的 QQ，在“系统设置”里配置模型，再按需开启自动回复。
+安装脚本会在项目内准备 Python、Node.js 和前端依赖，下载 SnowLuma Windows x64 Lite 发行包，并在缺少 WebView2 时尝试安装微软运行时。已有完整的 SnowLuma 目录会保留；下载的 SnowLuma 压缩包会校验 SHA-256。网络无法访问发行页时可能需要检查网络后重试。
 
-安装脚本从 SnowLuma 官方发行页下载 Windows x64 Lite 包并验证摘要；已有 `src/SnowLuma/` 目录会保留，不会自动覆盖。GitHub 发行信息暂时不可用时，脚本会提示并使用内置的已验证版本。SnowLuma 是独立第三方运行时，其发行包不包含在本仓库内。
+`QQBot.bat` 是带命令行窗口的启动入口，可用于查看启动错误。需要预览安装步骤时，可在项目目录运行 `Install.bat --dry-run`。
 
-## 数据与隐私
+## 开始使用
 
-应用设置、聊天存档、日志及服务凭据保存在本机 `runtime/` 和 `data/`；这两个目录默认不会提交到 Git。模型调用和联网搜索会将相关请求发送给你配置的模型服务或搜索服务。分享日志或提交问题前，请自行移除账号信息、聊天内容、密钥和其他敏感数据。
+1. 在“连接”页面启动 SnowLuma，连接并核验已登录的 QQ 账号。
+2. 在“系统设置 → 模型 API”中填写模型服务信息并保存，按需测试连接。
+3. 在“系统设置 → 默认人设”中查看或编辑默认角色卡。内置角色是“小鲸鱼”；它是角色设定，实际模型由你的 API 配置决定。
+4. 在“机器人 → 机器人设置”中配置聊天范围和人设。可以点击“使用默认人设”填入默认值，继续修改后点击保存。
+5. 确认聊天白名单和其他选项后，开启自动回复。图片、表情和联网能力需要在相应设置中启用。
 
-## 开发与测试
+默认人设用于新账号的初始设置，也可以手动填入已有账号；修改默认人设不会自动覆盖已保存的账号人设。
 
-| 路径 | 说明 |
+## 数据与网络
+
+程序的设置、聊天存档、记忆、日志和服务凭据保存在本机的 `runtime/` 等运行数据目录，不属于仓库源码。模型处理会将相关聊天上下文发送给你配置的模型服务；启用联网或图片处理后，相关内容也可能发送给对应服务。分享日志或提交问题前，请检查并移除账号信息、聊天内容和密钥。
+
+## 项目结构
+
+| 路径 | 内容 |
 | --- | --- |
-| `src/QQ-agent/` | Python 后端、存储与测试 |
-| `src/DesktopShell/` | 桌面入口和 React 前端 |
-| `setup.ps1` / `Install.bat` | 根目录一键安装入口 |
-| `tools/setup.ps1` | 便携 Python、Node.js 和 Python 依赖安装 |
-| `tools/python/requirements.txt` | Python 依赖清单 |
+| `src/QQ-agent/` | Python 机器人后端、存储和测试 |
+| `src/DesktopShell/` | pywebview 桌面入口、React 前端和测试 |
+| `src/SnowLuma/` | 安装时下载的独立 SnowLuma 运行时，不随源码仓库分发 |
+| `Install.bat` | 项目依赖安装入口 |
+| `tools/requirements.txt` | Python 依赖清单 |
+| `tools/python/`、`tools/node/` | 安装后生成的项目专用运行时 |
 
-在仓库根目录运行后端测试：
+## 开发检查
+
+先运行安装脚本准备依赖。在项目根目录打开 PowerShell，运行后端测试：
 
 ```powershell
 cd src\QQ-agent
 ..\..\tools\python\python.exe -m pytest -q
 ```
 
-前端检查：
+运行前端类型检查和测试：
 
 ```powershell
 cd src\DesktopShell
@@ -63,8 +74,10 @@ cd src\DesktopShell
 ..\..\tools\node\node.exe --test frontend\tests\*.test.mjs
 ```
 
-## 许可与致谢
+前端在应用启动时构建；修改源码后重新启动应用即可加载。
 
-本项目以 [MIT License](LICENSE) 发布。项目参考了 [QQ Agent](https://github.com/K0nd1us/QQ-agent) 和 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 等项目；第三方版权、许可及来源说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。SnowLuma 和其他第三方组件适用各自的许可，项目自身的 MIT 许可不改变这些条款。
+## 许可与来源
+
+本项目以 [MIT License](LICENSE) 发布。机器人业务设计和部分实现参考或改写自 [QQ Agent](https://github.com/K0nd1us/QQ-agent)，原项目版权及许可声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。SnowLuma 和其他第三方组件适用各自的许可。
 
 QQBot 是独立项目，与腾讯及 QQ 没有隶属关系。使用前请自行确认符合所用平台的相关条款。

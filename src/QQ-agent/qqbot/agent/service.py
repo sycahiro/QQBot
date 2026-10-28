@@ -735,7 +735,9 @@ class AgentService:
         try:
             finished = False
             poke_calls = 0
-            for _ in range(config["api"]["maxRounds"]):
+            rescued = False
+            rounds = config["api"]["maxRounds"]
+            for round_index in range(rounds):
                 if not self._permit(account, key, epoch):
                     raise asyncio.CancelledError()
                 response = await self._request_model(
@@ -757,6 +759,29 @@ class AgentService:
                     raise asyncio.CancelledError()
                 calls = msg.get("tool_calls") or []
                 if not calls:
+                    # 只说不做是最高频的失败形态：模型把回复写进普通文字却不调
+                    # send_message。先打回一次，明确要求改用工具；再次发生才判失败。
+                    if not rescued and round_index + 1 < rounds:
+                        rescued = True
+                        session["records"].append(
+                            {
+                                "kind": "note",
+                                "text": "模型只输出了文字、未调用工具，QQ 里不会发出任何内容；已打回一次，要求改用 send_message 或 finish。",
+                            }
+                        )
+                        self._sessions.save(session)
+                        messages.append(
+                            {
+                                "role": "user",
+                                "content": (
+                                    "【系统纠正】你上一条回复只是普通文字，没有调用任何工具，"
+                                    "那些文字不会发到 QQ，用户完全看不到。请立刻调用 send_message，"
+                                    "把你要说的话放进 messages 数组；如果你想保持安静或结束处理，"
+                                    "请调用 finish。不要再次只输出普通文字。"
+                                ),
+                            }
+                        )
+                        continue
                     raise ModelError(
                         (
                             f"已保留 QQ 确认的 {len(session['sent'])} 项发送或互动；随后模型未调用工具结束处理。请查看下方实际回执。"

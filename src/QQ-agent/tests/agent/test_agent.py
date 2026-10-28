@@ -308,18 +308,37 @@ def test_tool_only_reply_and_finish_have_structured_records_without_null(stack):
     assert messages.list_chats(ACCOUNT)[0]["count"] == 2
 
 
-def test_plain_assistant_analysis_is_not_sent_and_is_an_explicit_error_without_retry(stack):
+def test_plain_assistant_text_is_bounced_once_then_reported_without_sending(stack):
     service, receiver, sessions, _, _, connection, model = stack
     model.responses = [result(content="我应该回复一句你好，或者保持沉默。")]
     service.enable(ACCOUNT, True)
     receiver.receive(ACCOUNT, packet())
     wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] == "error")
     item = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
-    assert not connection.calls and len(model.calls) == 1 and not item["sent"]
-    assert "未调用工具" in item["reason"] and item["records"][-1]["kind"] == "error"
+    assert not connection.calls and not item["sent"]
+    # 打回一次后模型仍然只输出文字，才判失败。
+    assert len(model.calls) == 2 and "未调用工具" in item["reason"]
+    assert [r["kind"] for r in item["records"]].count("note") == 1
     assert any(
         record.get("text") == "我应该回复一句你好，或者保持沉默。" for record in item["records"]
     )
+    # 纠正消息确实进入了下一次模型请求。
+    assert any(
+        isinstance(m.get("content"), str) and "系统纠正" in m["content"]
+        for m in model.calls[1]
+    )
+
+
+def test_plain_assistant_text_is_rescued_into_a_real_send(stack):
+    service, receiver, sessions, _, _, connection, model = stack
+    model.responses = [result(content="你好呀，我在的。"), result("send_message", "finish")]
+    service.enable(ACCOUNT, True)
+    receiver.receive(ACCOUNT, packet())
+    wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] != "running")
+    item = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
+    assert item["status"] == "done" and len(model.calls) == 2 and len(connection.calls) == 1
+    assert item["sent"][0]["messageId"] == "-1"
+    assert [r["kind"] for r in item["records"]].count("note") == 1
 
 
 def test_explicit_finish_without_sending_remains_valid_silence(stack):
@@ -342,7 +361,7 @@ def test_plain_response_after_confirmed_send_preserves_receipt_and_never_resends
     receiver.receive(ACCOUNT, packet())
     wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] == "error")
     item = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
-    assert len(connection.calls) == 1 and len(model.calls) == 2 and len(item["sent"]) == 1
+    assert len(connection.calls) == 1 and len(model.calls) == 3 and len(item["sent"]) == 1
     assert item["sent"][0]["messageId"] == "-1" and "未调用工具" in item["reason"]
 
 
@@ -403,8 +422,10 @@ def test_provider_returning_only_text_never_sends_or_retries_even_when_tools_wer
     receiver.receive(ACCOUNT, packet())
     wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] == "error")
     item = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
-    assert len(requests) == 1 and not connection.calls and not item["sent"]
+    # 只回文字会被打回一次（第二次请求带系统纠正），仍只有文字才判失败。
+    assert len(requests) == 2 and not connection.calls and not item["sent"]
     assert item["records"][-2] == {"kind": "assistant", "text": "仅供管理端查看的模型文字"}
+    assert [r["kind"] for r in item["records"]].count("note") == 1
 
 
 def test_assistant_explanation_alongside_tools_is_never_forwarded_as_reply(stack):

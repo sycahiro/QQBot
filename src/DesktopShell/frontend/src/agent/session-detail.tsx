@@ -156,7 +156,8 @@ export function SessionDetail({ session }: { session: Session }) {
     const tools = records.filter((r) => r.kind === 'tool');
     const context = records.filter(
         (r) =>
-            ['prompt', 'reasoning', 'assistant'].includes(r.kind) && (r.text || r.messages?.length),
+            ['prompt', 'reasoning', 'assistant', 'note'].includes(r.kind) &&
+            (r.text || r.messages?.length),
     );
     const requests = records.filter((r) => r.kind === 'model_request');
     const seconds =
@@ -317,14 +318,22 @@ export function SessionDetail({ session }: { session: Session }) {
                         <RecordCard
                             key={index}
                             icon={
-                                r.kind === 'prompt' ? Layers : r.kind === 'reasoning' ? Brain : Bot
+                                r.kind === 'prompt'
+                                    ? Layers
+                                    : r.kind === 'reasoning'
+                                      ? Brain
+                                      : r.kind === 'note'
+                                        ? CircleAlert
+                                        : Bot
                             }
                             title={
                                 r.kind === 'prompt'
                                     ? '本次输入'
                                     : r.kind === 'reasoning'
                                       ? '模型思考'
-                                      : '模型文字'
+                                      : r.kind === 'note'
+                                        ? '系统纠正'
+                                        : '模型文字'
                             }
                             meta={`记录 ${index + 1}`}
                             summary={

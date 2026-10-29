@@ -7,7 +7,7 @@ import threading
 import time
 
 from ..qq.engine import EngineError
-from ..faces import NAMES
+from ..faces import FACES, NAMES
 from ..storage.messages import chat_key, numeric_id, segments_text
 
 
@@ -26,7 +26,9 @@ def _validate_model_text(text):
 
 # QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
 # named [表情:呲牙] (resolved via the face table). Unknown names stay literal.
-FACE_PATTERN = re.compile(r"\[(?:CQ:face,id=|表情:)(\d{1,3}|[a-zA-Z·\u4e00-\u9fff]{1,6})\]", re.I)
+FACE_PATTERN = re.compile(
+    r"\[(?:CQ:face,id=|表情:)(\d{1,3}|[a-zA-Z0-9+·!\u4e00-\u9fff]{1,10})\]", re.I
+)
 
 
 def face_segments(text):
@@ -37,7 +39,11 @@ def face_segments(text):
         token = match.group(1)
         if match.start() > pos:
             segments.append({"type": "text", "data": {"text": text[pos : match.start()]}})
-        face_id = int(token) if token.isdigit() else NAMES.get(token)
+        if token.isdigit():
+            # Numeric ids must come from the face table; never trust guesses.
+            face_id = int(token) if int(token) in FACES else None
+        else:
+            face_id = NAMES.get(token)
         if face_id is None:
             # Unknown name: keep the original bracketed form visible as text.
             if segments and segments[-1].get("type") == "text":
@@ -45,8 +51,6 @@ def face_segments(text):
             else:
                 segments.append({"type": "text", "data": {"text": match.group(0)}})
         else:
-            if face_id > 400:
-                raise ValueError(f"QQ 表情编号 {face_id} 无效；请用表内编号或名字")
             segments.append({"type": "face", "data": {"id": str(face_id)}})
         pos = match.end()
     if pos < len(text):

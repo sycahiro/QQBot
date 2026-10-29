@@ -261,8 +261,8 @@ def test_face_codes_are_split_into_onebot_face_segments():
         {"type": "text", "data": {"text": "早 "}},
         {"type": "face", "data": {"id": "13"}},
     ]
-    assert face_segments("[表情:47]你说说") == [
-        {"type": "face", "data": {"id": "47"}},
+    assert face_segments("[表情:384]你说说") == [
+        {"type": "face", "data": {"id": "384"}},
         {"type": "text", "data": {"text": "你说说"}},
     ]
     assert face_segments("[表情:呲牙]早 [表情:doge]") == [
@@ -270,13 +270,19 @@ def test_face_codes_are_split_into_onebot_face_segments():
         {"type": "text", "data": {"text": "早 "}},
         {"type": "face", "data": {"id": "179"}},
     ]
-    assert face_segments("[CQ:face,id=13]") == [{"type": "face", "data": {"id": "13"}}]
-    # 未知名字和非数字写法不是表情码，按普通文本原样发送。
-    assert face_segments("[表情:狗头] [CQ:face, id=13]") == [
-        {"type": "text", "data": {"text": "[表情:狗头] [CQ:face, id=13]"}}
+    # 官方新表条目：名字、纯数字编号、特殊字符名（+1）都按表解析。
+    assert face_segments("[表情:晚安] [表情:干饭] [表情:+1]") == [
+        {"type": "face", "data": {"id": "384"}},
+        {"type": "text", "data": {"text": " "}},
+        {"type": "face", "data": {"id": "475"}},
+        {"type": "text", "data": {"text": " "}},
+        {"type": "face", "data": {"id": "449"}},
     ]
-    with pytest.raises(ValueError, match="表情编号"):
-        face_segments("[CQ:face,id=999]")
+    assert face_segments("[CQ:face,id=13]") == [{"type": "face", "data": {"id": "13"}}]
+    # 未知名字、表外编号和非数字写法不是有效表情码，按普通文本原样发送。
+    assert face_segments("[表情:狗头] [CQ:face, id=13] [CQ:face,id=999] [表情:999]") == [
+        {"type": "text", "data": {"text": "[表情:狗头] [CQ:face, id=13] [CQ:face,id=999] [表情:999]"}}
+    ]
 
 
 def test_face_messages_keep_receipt_dedupe_and_archive_text(sender):

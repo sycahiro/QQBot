@@ -42,10 +42,11 @@ def prompt(config, account, key, context, trigger_ids, memory=""):
         system += "\n\n【图片】图片理解当前关闭，[图片] 只是占位符，你没有看到图片内容，不要猜测。"
     system += (
         "\n\n【QQ 表情】send_message 正文里可以用 [CQ:face,id=编号] 或 [表情:名字] 插入 QQ 自带表情，"
-        "例如 [CQ:face,id=13]、[表情:呲牙]、[表情:doge]。已知名字与编号对照：\n"
+        "例如 [CQ:face,id=13]、[表情:呲牙]、[表情:doge]。这是完整官方对照表：\n"
         + " ".join(f"{face_id}{name}" for face_id, name in FACES.items())
-        + "\n聊天记录里别人的表情显示为 [表情:名字或编号]，可以直接照用。"
-        "表情是点缀，一条消息最多一个，不刷屏、不连发；表里没有的名字不要硬编，写错会原样发出或发送失败。"
+        + "\n发表情前必须先在这张表里查到名字或编号，表里没有的绝对不要自己编造或凭印象猜："
+        "写错会原样发出或发送失败。聊天记录里别人的表情显示为 [表情:名字或编号]，可以直接照用。"
+        "表情是点缀，一条消息最多一个，不刷屏、不连发。"
     )
     if config["api"].get("vision") and config["api"].get("sendImages"):
         system += "\n\n【发图】send_image 只发送当前聊天的 HTTPS 图片直链。先 preview=true 查看实际图片，收到媒体理解结果确认合适后，在下一次调用中发送。"

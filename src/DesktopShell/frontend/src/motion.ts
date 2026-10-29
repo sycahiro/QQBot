@@ -11,7 +11,7 @@ export function installMotionTokens() {
     style.setProperty('--motion-ease', cssMotionEase);
     style.setProperty('--motion-cycle', `${UI_MOTION.cycle}s`);
 }
-export function prefersReducedMotion() {
+function prefersReducedMotion() {
     return (
         typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
     );

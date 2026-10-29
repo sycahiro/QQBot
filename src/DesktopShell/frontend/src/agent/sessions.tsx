@@ -9,7 +9,7 @@ import { useConfirm } from '../components/confirmation';
 import { useEffect, useRef, useState } from 'react';
 import { MessageSquare, Square, RotateCcw } from 'lucide-react';
 import { Notice } from '../components/notice';
-import { chatLabel, type Session } from '../business';
+import { chatLabel, dateTime, type Session } from '../business';
 
 import { SessionDetail } from './session-detail';
 import { statusNames } from './session-view';
@@ -217,9 +217,7 @@ export function Sessions({ ready }: { ready: boolean }) {
                                     .split('\n')
                                     .filter((line) => line.trim())
                                     .at(-1)}
-                                meta={new Date(item.started).toLocaleString('zh-CN', {
-                                    hour12: false,
-                                })}
+                                meta={dateTime(item.started)}
                                 badge={
                                     <span className={'session-status ' + item.status}>
                                         {item.status === 'error' && item.sent.length

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { QqConnectionInfo } from '../desktop';
 
 /** 未连接时只显示提示，连接后才渲染功能内容；账号变化时立刻卸载旧内容。 */
-export function ConnectionGate({
+function ConnectionGate({
     connected,
     connecting,
     identity,

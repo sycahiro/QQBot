@@ -55,7 +55,7 @@ export interface Contact {
     name: string;
 }
 
-export interface ResourceInfo {
+interface ResourceInfo {
     hostname: string;
     cpuModel: string;
     logicalCores: number;
@@ -83,7 +83,7 @@ export type QqDiscoveryResult =
           warning?: string;
       }
     | { ok: false; error: { code: string; message: string } };
-export type QqSelectionResult =
+type QqSelectionResult =
     | { ok: true; selectedUin: string | null }
     | { ok: false; error: { code: string; message: string } };
 
@@ -98,14 +98,14 @@ export interface QqConnectionInfo {
     } | null;
     error: string | null;
 }
-export interface AgentConnectionInfo {
+interface AgentConnectionInfo {
     source: 'qq';
     connection: QqConnectionInfo;
 }
 
 type DesktopAgentStatus = AgentStatus & { workspace?: AgentConnectionInfo };
 
-export type QqConnectionResult =
+type QqConnectionResult =
     | { ok: true; connection: QqConnectionInfo }
     | { ok: false; error: { code: string; message: string } };
 
@@ -407,7 +407,7 @@ declare global {
     }
 }
 
-export interface NetworkAttempt {
+interface NetworkAttempt {
     engine: 'bing' | 'baidu' | 'model';
     mode: 'direct' | 'browser' | 'provider';
     status: string;

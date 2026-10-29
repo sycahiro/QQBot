@@ -164,6 +164,12 @@ export interface MarketEntry {
     author: string;
     category: string;
 }
+export function dateTime(ts: number) {
+    return new Date(ts).toLocaleString('zh-CN', { hour12: false });
+}
+export function timeOfDay(ts: number) {
+    return new Date(ts).toLocaleTimeString('zh-CN', { hour12: false });
+}
 export function chatLabel(chat: Pick<ChatSummary, 'chatKey' | 'name'>) {
     const [kind, id] = chat.chatKey.split(':');
     return {

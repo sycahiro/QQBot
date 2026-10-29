@@ -465,15 +465,6 @@ strong {
     background: var(--muted-foreground);
 }
 
-.console-connection .status-dot {
-    background: var(--success);
-    margin-right: 0;
-}
-
-.console-connection .status-dot.is-muted {
-    background: var(--muted-foreground);
-}
-
 .breadcrumb {
     font-size: 11px;
     color: var(--muted-foreground);
@@ -522,32 +513,23 @@ strong {
         border-color var(--motion-duration) var(--motion-ease);
 }
 
-.workspace-snowluma.is-connected {
+.workspace-snowluma.is-connected,
+.workspace-account.is-connected,
+.workspace-reply.is-on {
     color: var(--log-success);
     background: color-mix(in oklab, var(--success) 10%, var(--card));
     border-color: color-mix(in oklab, var(--success) 12%, transparent);
 }
-.workspace-snowluma.is-connected .status-dot {
-    background: currentColor;
-}
-.workspace-snowluma.is-error {
-    color: var(--log-error);
-    background: color-mix(in oklab, var(--destructive) 8%, var(--card));
-}
-.workspace-snowluma.is-error .status-dot {
-    background: currentColor;
-}
-.workspace-account.is-connected {
-    color: var(--log-success);
-    background: color-mix(in oklab, var(--success) 10%, var(--card));
-    border-color: color-mix(in oklab, var(--success) 12%, transparent);
-}
-.workspace-account.is-connected .status-dot {
-    background: currentColor;
-}
+.workspace-snowluma.is-error,
 .workspace-account.is-error {
     color: var(--log-error);
     background: color-mix(in oklab, var(--destructive) 8%, var(--card));
+}
+.workspace-snowluma.is-connected .status-dot,
+.workspace-snowluma.is-error .status-dot,
+.workspace-account.is-connected .status-dot,
+.workspace-reply.is-on .status-dot {
+    background: currentColor;
 }
 .workspace-model {
     max-width: 240px;
@@ -563,14 +545,6 @@ strong {
     text-overflow: ellipsis;
     white-space: nowrap;
     min-width: 0;
-}
-.workspace-reply.is-on {
-    color: var(--log-success);
-    background: color-mix(in oklab, var(--success) 10%, var(--card));
-    border-color: color-mix(in oklab, var(--success) 12%, transparent);
-}
-.workspace-reply.is-on .status-dot {
-    background: currentColor;
 }
 .network-result {
     overflow: hidden;
@@ -727,10 +701,6 @@ strong {
 .metric-label > svg,
 .console-panel-heading > svg,
 .theme-option > svg,
-.plain-status > svg {
-    color: var(--primary);
-}
-
 .metric-value {
     display: block;
     font-size: 27px;
@@ -858,21 +828,6 @@ strong {
     margin-top: 8px;
 }
 
-.desktop-placeholder {
-    min-height: 390px;
-    display: grid;
-    place-items: center;
-}
-
-.plain-status {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--muted-foreground);
-    font-size: 11px;
-    margin-top: 24px;
-}
-
 .theme-options {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -899,58 +854,6 @@ strong {
 .theme-option strong {
     flex: 1;
     font-size: 12px;
-}
-
-.about-list {
-    margin: 0;
-    max-width: 740px;
-}
-
-.about-list > div {
-    display: flex;
-    justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    padding: 12px 0;
-    font-size: 12px;
-}
-
-.about-list dt {
-    color: var(--muted-foreground);
-}
-
-.about-list dd {
-    margin: 0;
-}
-
-.source-note {
-    font-size: 11px;
-    color: var(--muted-foreground);
-    margin-top: 23px;
-}
-
-.about-body {
-    max-width: 740px;
-    margin: 16px 0 0;
-    font-size: 12px;
-    line-height: 1.9;
-    color: var(--foreground);
-}
-
-.about-notes {
-    max-width: 740px;
-    margin: 12px 0 0;
-    padding-left: 18px;
-    font-size: 12px;
-    line-height: 1.9;
-    color: var(--foreground);
-}
-
-.about-notes li + li {
-    margin-top: 6px;
-}
-
-.about-notes strong {
-    font-weight: 600;
 }
 
 .desktop-error {
@@ -1338,25 +1241,7 @@ p.action-notice {
 .sticker-meta {
     margin: 14px 0 20px;
 }
-.web-sources {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin: 14px 0;
-}
-.web-sources > div {
-    border-left: 2px solid var(--primary);
-    padding-left: 12px;
-}
-.web-sources strong {
-    font-size: 12px;
-}
-.web-sources small {
-    display: block;
-    margin-top: 5px;
-    color: var(--muted-foreground);
-    overflow-wrap: anywhere;
-}
+
 .archive-search {
     display: flex;
     align-items: center;
@@ -1417,28 +1302,7 @@ p.action-notice {
 .card-save-footer.save-actions {
     justify-content: flex-start;
 }
-.agent-account-picker {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 16px 20px;
-}
-.agent-account-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.agent-account-option[aria-pressed='true'] {
-    color: var(--foreground);
-    border-color: var(--primary);
-    background: color-mix(in oklab, var(--primary) 10%, var(--card));
-    opacity: 1;
-}
-.agent-account-picker small {
-    color: var(--muted-foreground);
-    margin-left: auto;
-}
+
 .model-subheading {
     padding-top: 20px;
     margin-top: 4px;
@@ -1454,67 +1318,7 @@ p.action-notice {
     line-height: 1.8;
     color: var(--muted-foreground);
 }
-.debug-api-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 24px;
-    max-height: 60vh;
-    overflow: auto;
-}
-.debug-api-list .btn {
-    margin-top: 12px;
-}
-.debug-api-list small {
-    display: block;
-    margin-top: 8px;
-}
-.debug-result {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    max-height: 55vh;
-    overflow: auto;
-    margin-top: 18px;
-    font:
-        12px/1.8 Consolas,
-        monospace;
-}
-.debug-json {
-    margin-top: 20px;
-}
-.debug-parameters {
-    margin-top: 20px;
-    border: 1px solid var(--border);
-    background: var(--card);
-}
-.debug-parameters .disclosure-trigger {
-    font-weight: 600;
-}
-.debug-parameters textarea {
-    font:
-        12px/1.8 Consolas,
-        'Microsoft YaHei',
-        monospace;
-    min-height: 140px;
-    background: var(--muted);
-}
-.debug-contact-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 18px 0;
-}
-.debug-contact-actions small {
-    color: var(--muted-foreground);
-    font-size: 11px;
-}
-.debug-contact-actions.debug-compose-contacts {
-    align-self: end;
-    justify-self: start;
-    flex-wrap: wrap;
-    margin: 0;
-    min-height: 38px;
-}
+
 .market-grid > .animated-list-item {
     min-width: 0;
     height: 100%;
@@ -2059,10 +1863,7 @@ p.action-notice {
     flex: 1;
     min-width: 0;
 }
-.debug-compose-contacts .btn {
-    flex: none;
-    align-self: center;
-}
+
 .media-profile-control > .btn {
     flex-shrink: 0;
     justify-content: center;
@@ -2401,43 +2202,7 @@ p.action-notice {
 .session-status.running {
     color: var(--primary);
 }
-.session-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-.session-summary {
-    font-size: 11px;
-    color: var(--muted-foreground);
-}
-.session-summary > span + span {
-    margin-left: 10px;
-}
-.session-summary p {
-    margin-top: 10px;
-}
-.delivery-card {
-    background: color-mix(in oklab, var(--success) 6%, var(--card));
-    border: 1px solid color-mix(in oklab, var(--success) 30%, var(--border));
-    padding: 18px;
-    border-radius: 11px;
-}
-.delivery-card h3 {
-    font-size: 12px;
-    color: var(--success);
-    margin-bottom: 10px;
-}
-.delivery-card > div {
-    margin-top: 10px;
-}
-.delivery-card p {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-.delivery-card small {
-    color: var(--muted-foreground);
-    font-size: 10px;
-}
+
 .session-record {
     background: var(--muted);
     padding: 16px;
@@ -2712,30 +2477,7 @@ html.theme-changing *::after {
     width: 100%;
     box-sizing: border-box;
 }
-.debug-segment-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 16px;
-}
-.debug-segment-tools {
-    display: flex;
-    gap: 6px;
-}
-.debug-file-picker {
-    justify-content: center;
-    gap: 12px;
-}
-.debug-file-picker span {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    overflow-wrap: anywhere;
-}
-.debug-result-card {
-    overflow: hidden;
-}
+
 .memory-review .memory-save {
     gap: 10px;
 }

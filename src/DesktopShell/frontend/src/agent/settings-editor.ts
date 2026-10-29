@@ -71,7 +71,7 @@ export function draftApi(draft: SettingsDraft) {
         ...(draft.clearKey ? { apiKey: '' } : draft.key ? { apiKey: draft.key } : {}),
     };
 }
-export function draftSearch(draft: SettingsDraft) {
+function draftSearch(draft: SettingsDraft) {
     return { ...draft.config.webSearch };
 }
 function modelApi(draft: SettingsDraft) {

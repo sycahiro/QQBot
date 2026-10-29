@@ -1,11 +1,6 @@
+import { storageBytes } from './settings/storage-types';
 import { Cpu } from 'lucide-react';
 import { useResources } from './desktop';
-
-function bytes(value: number) {
-    return value >= 1024 ** 3
-        ? `${(value / 1024 ** 3).toFixed(1)} GB`
-        : `${(value / 1024 ** 2).toFixed(1)} MB`;
-}
 
 function Usage({ label, value, detail }: { label: string; value: number | null; detail: string }) {
     return (
@@ -55,11 +50,15 @@ export function Resources({ ready }: { ready: boolean }) {
                 <Usage
                     label="内存使用率"
                     value={data?.memoryPercent ?? null}
-                    detail={data ? `${bytes(data.memoryUsed)} / ${bytes(data.memoryTotal)}` : '—'}
+                    detail={
+                        data
+                            ? `${storageBytes(data.memoryUsed)} / ${storageBytes(data.memoryTotal)}`
+                            : '—'
+                    }
                 />
                 <div className="resource-app">
                     <small>应用内存</small>
-                    <strong>{data ? bytes(data.appMemory) : '—'}</strong>
+                    <strong>{data ? storageBytes(data.appMemory) : '—'}</strong>
                     <p>QQBot 及其子进程</p>
                 </div>
             </div>

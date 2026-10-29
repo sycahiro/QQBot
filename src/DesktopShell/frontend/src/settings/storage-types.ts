@@ -3,7 +3,7 @@ export interface StoragePolicy {
     logRetainDays: number;
     engineRetainDays: number;
 }
-export type StorageCategory = 'archives' | 'sessions' | 'memories' | 'stickers' | 'indexes';
+type StorageCategory = 'archives' | 'sessions' | 'memories' | 'stickers' | 'indexes';
 export type StorageRequest =
     | { scope: 'logs' | 'temporary' }
     | { scope: 'account'; account: string; category: StorageCategory }
@@ -14,7 +14,7 @@ export interface CleanupResult {
     deletedRows: number;
     failures: string[];
 }
-export interface StorageAccount {
+interface StorageAccount {
     account: string;
     databaseBytes: number;
     indexBytes: number;

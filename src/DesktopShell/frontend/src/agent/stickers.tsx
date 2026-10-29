@@ -8,7 +8,8 @@ import {
 import { useConfirm } from '../components/confirmation';
 import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Save, Search, Smile } from 'lucide-react';
-import type { Sticker } from '../business';
+import { dateTime, type Sticker } from '../business';
+import { storageBytes } from '../settings/storage-types';
 
 import { Notice } from '../components/notice';
 
@@ -313,8 +314,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                                 title={item.note || '未备注的表情'}
                                 subtitle={
                                     <>
-                                        {item.width} × {item.height} ·{' '}
-                                        {(item.bytes / 1024).toFixed(1)} KB
+                                        {item.width} × {item.height} · {storageBytes(item.bytes)}
                                     </>
                                 }
                                 preview={
@@ -339,11 +339,9 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                             </div>
                             <p className="action-notice sticker-meta">
                                 {preview.item.width} × {preview.item.height} ·{' '}
-                                {(preview.item.bytes / 1024).toFixed(1)} KB
+                                {storageBytes(preview.item.bytes)}
                                 {preview.item.firstFrame ? ' · 动图首帧' : ''} ·{' '}
-                                {new Date(preview.item.created).toLocaleString('zh-CN', {
-                                    hour12: false,
-                                })}
+                                {dateTime(preview.item.created)}
                             </p>
                             <div className="bot-form-grid">
                                 <label className="form-wide">

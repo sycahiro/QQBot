@@ -14,7 +14,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import type { Session, SessionRecord } from '../business';
+import { dateTime, timeOfDay, type Session, type SessionRecord } from '../business';
 import { Disclosure } from '../components/disclosure';
 import { AnimatedList } from '../components/animated-list';
 import { StatusSwap } from '../components/status-swap';
@@ -194,7 +194,7 @@ export function SessionDetail({ session }: { session: Session }) {
                         />
                     </strong>
                     <time dateTime={new Date(session.started).toISOString()}>
-                        {new Date(session.started).toLocaleString('zh-CN', { hour12: false })}
+                        {dateTime(session.started)}
                     </time>
                 </div>
                 {session.reason && <p>{session.reason}</p>}
@@ -236,11 +236,7 @@ export function SessionDetail({ session }: { session: Session }) {
                                             QQ 已确认
                                         </>
                                     )}
-                                    <time>
-                                        {new Date(sent.ts).toLocaleTimeString('zh-CN', {
-                                            hour12: false,
-                                        })}
-                                    </time>
+                                    <time>{timeOfDay(sent.ts)}</time>
                                 </small>
                             </article>
                         ))}

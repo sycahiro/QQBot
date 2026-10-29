@@ -1,5 +1,5 @@
 import { BookmarkPlus, LoaderCircle, Undo2 } from 'lucide-react';
-import type { ArchivedMessage } from '../business';
+import { dateTime, type ArchivedMessage } from '../business';
 
 export function ArchiveMessage({
     item,
@@ -25,7 +25,7 @@ export function ArchiveMessage({
                 {item.self ? '我' : item.senderName || item.senderId}
                 {!item.self && item.senderName !== item.senderId
                     ? `（${item.senderId}）`
-                    : ''} · {new Date(item.ts).toLocaleString('zh-CN', { hour12: false })}
+                    : ''} · {dateTime(item.ts)}
                 {item.withdrawn ? (
                     <span className="archive-recall-badge">
                         <Undo2 size={12} aria-hidden="true" />

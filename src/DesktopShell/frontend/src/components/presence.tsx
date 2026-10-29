@@ -3,7 +3,7 @@ import { UI_MOTION } from '../motion';
 
 const EXIT_MS = UI_MOTION.duration * 1000;
 
-export type Presence = { mounted: boolean; leaving: boolean };
+type Presence = { mounted: boolean; leaving: boolean };
 
 /** Keeps an element mounted through its CSS exit animation after `open` turns false. */
 export function usePresence(open: boolean, exitMs = EXIT_MS): Presence {

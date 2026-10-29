@@ -47,6 +47,7 @@ def prompt(config, account, key, context, trigger_ids, memory=""):
         + "\n发表情前必须先在这张表里查到名字或编号，表里没有的绝对不要自己编造或凭印象猜："
         "写错会原样发出或发送失败。聊天记录里别人的表情显示为 [表情:名字或编号]，可以直接照用。"
         "表情是点缀，一条消息最多一个，不刷屏、不连发。"
+        "单独一条消息只发一个表情、不带任何文字时，QQ 会把它显示成大表情；想要这种效果就让那一条只有表情，什么都别加。"
     )
     if config["api"].get("vision") and config["api"].get("sendImages"):
         system += "\n\n【发图】send_image 只发送当前聊天的 HTTPS 图片直链。先 preview=true 查看实际图片，收到媒体理解结果确认合适后，在下一次调用中发送。"

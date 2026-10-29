@@ -17,6 +17,7 @@ import type { ReactNode } from 'react';
 import type { Session, SessionRecord } from '../business';
 import { Disclosure } from '../components/disclosure';
 import { AnimatedList } from '../components/animated-list';
+import { StatusSwap } from '../components/status-swap';
 import { duration, requestCount, sessionOutcome } from './session-view';
 
 const names: Record<string, string> = {
@@ -188,7 +189,9 @@ export function SessionDetail({ session }: { session: Session }) {
                 <div className="session-outcome-title">
                     <strong>
                         <span className="session-state-dot" />
-                        {session.status === 'running' ? state : sessionOutcome(session)}
+                        <StatusSwap
+                            text={session.status === 'running' ? state : sessionOutcome(session)}
+                        />
                     </strong>
                     <time dateTime={new Date(session.started).toISOString()}>
                         {new Date(session.started).toLocaleString('zh-CN', { hour12: false })}

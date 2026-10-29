@@ -431,6 +431,20 @@ strong {
         background-color calc(var(--motion-duration) * 2) var(--motion-ease),
         border-color calc(var(--motion-duration) * 2) var(--motion-ease);
 }
+/* 状态类挂上时从中性灰渐变到目标色；只写 from，终点取元素当前计算值，
+   一份 keyframes 同时服务蓝/绿/红三态，挂载与切换都必然触发。 */
+.status-box.is-pending,
+.status-box.is-ready,
+.status-box.is-error {
+    animation: status-box-in calc(var(--motion-duration) * 2) var(--motion-ease);
+}
+@keyframes status-box-in {
+    from {
+        background: color-mix(in oklab, var(--muted) 50%, var(--card));
+        border-color: var(--border);
+        color: var(--muted-foreground);
+    }
+}
 .status-box.is-pending {
     border-color: color-mix(in oklab, var(--primary) 30%, transparent);
     background: color-mix(in oklab, var(--primary) 7%, var(--card));

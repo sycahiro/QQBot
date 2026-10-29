@@ -81,7 +81,7 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
                         disabled={busy}
                         onClick={() => refresh((value) => value + 1)}
                     >
-                        <RefreshCw size={14} className={busy ? 'market-refreshing' : undefined} />
+                        <RefreshCw size={15} className={busy ? 'qq-scanning' : undefined} />
                         刷新目录
                     </button>
                     <button className="btn" onClick={() => void openStore()}>

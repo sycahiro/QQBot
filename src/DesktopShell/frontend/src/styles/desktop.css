@@ -188,6 +188,7 @@ button:focus-visible {
     justify-content: center;
     gap: 8px;
     font: inherit;
+    font-size: 13px;
     white-space: nowrap;
     border: 1px solid var(--border);
     border-radius: 9px;
@@ -709,7 +710,7 @@ strong {
 
 .console-panel-heading p {
     color: var(--muted-foreground);
-    font-size: 11px;
+    font-size: 12px;
     margin-top: 5px;
 }
 
@@ -1166,6 +1167,9 @@ strong {
     color: var(--muted-foreground);
     font-size: 12px;
 }
+p.action-notice {
+    margin-top: 12px;
+}
 .archive-toolbar > div {
     display: flex;
     gap: 8px;
@@ -1512,19 +1516,6 @@ strong {
 .market-grid .console-panel > .session-status {
     align-self: flex-start;
     flex: none;
-}
-.market-refreshing {
-    animation: market-spin var(--motion-cycle) linear infinite;
-}
-@keyframes market-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-@media (prefers-reduced-motion: reduce) {
-    .market-refreshing {
-        animation: none;
-    }
 }
 .tab-panel-frame {
     min-width: 0;
@@ -1981,7 +1972,7 @@ strong {
 }
 .bot-field > small,
 .bot-form-grid label > small {
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.7;
 }
 .notice-host {
@@ -2144,7 +2135,7 @@ strong {
     flex-direction: column;
     gap: 8px;
     min-width: 0;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--muted-foreground);
 }
 .form-wide {
@@ -2272,7 +2263,8 @@ strong {
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 11px;
+    font-size: 13px;
+    color: var(--foreground);
 }
 .bot-form-grid label.form-check {
     flex-direction: row;
@@ -2968,6 +2960,11 @@ html.theme-changing *::after {
 }
 .storage-cleanup-row p {
     margin: 8px 0 0;
+}
+.storage-cleanup-row strong,
+.storage-category strong,
+.storage-account-heading strong {
+    font-size: 13px;
 }
 .storage-accounts {
     display: flex;

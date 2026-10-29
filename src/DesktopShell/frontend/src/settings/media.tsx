@@ -129,7 +129,7 @@ export function MediaSettings({ ready }: { ready: boolean }) {
                 <div className="console-panel-heading">
                     <div>
                         <h2>图片功能</h2>
-                        <p>所有账号共用。动图只读第一帧。</p>
+                        <p>所有账号共用。动图只读第一帧；发图需先开启看图。</p>
                     </div>
                     <Image size={18} />
                 </div>
@@ -151,7 +151,6 @@ export function MediaSettings({ ready }: { ready: boolean }) {
                         </label>
                     ))}
                 </div>
-                <p className="action-notice">发图需先开启看图。</p>
             </section>
             <MediaModel
                 config={config}
@@ -491,13 +490,19 @@ function MediaModel({
                 <div className="form-wide model-check-actions">
                     {editing && (
                         <button type="button" className="btn" onClick={() => void check(true)}>
-                            <List size={14} />
-                            {checking === 'list' ? '正在获取…' : '获取模型列表'}
+                            <List
+                                size={15}
+                                className={checking === 'list' ? 'qq-scanning' : undefined}
+                            />
+                            获取模型列表
                         </button>
                     )}
                     <button type="button" className="btn" onClick={() => void check(false)}>
-                        <Radio size={14} />
-                        {checking === 'image' ? '正在测试图片…' : '测试图片输入'}
+                        <Radio
+                            size={15}
+                            className={checking === 'image' ? 'qq-scanning' : undefined}
+                        />
+                        测试图片输入
                     </button>
                     <small role={checking ? 'status' : undefined}>
                         {checking

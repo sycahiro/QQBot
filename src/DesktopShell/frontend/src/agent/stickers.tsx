@@ -220,7 +220,11 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                 noun="表情"
                 remove={{ disabled: busy || !selected, run: () => void remove(false) }}
                 clear={{ disabled: busy || !items.length, run: () => void remove(true) }}
-                refresh={{ disabled: busy, run: () => refresh((v) => v + 1) }}
+                refresh={{
+                    disabled: busy,
+                    loading: busy,
+                    run: () => refresh((v) => v + 1),
+                }}
                 actions={
                     <>
                         <input

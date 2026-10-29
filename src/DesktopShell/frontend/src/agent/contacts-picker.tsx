@@ -64,8 +64,8 @@ export function ContactPicker({ editor }: { editor: SettingsEditor }) {
                         disabled={busy}
                         onClick={() => void load()}
                     >
-                        <RefreshCw size={14} />
-                        {busy ? '读取中…' : contacts ? '刷新联系人' : '读取联系人'}
+                        <RefreshCw size={15} className={busy ? 'qq-scanning' : undefined} />
+                        {contacts ? '刷新联系人' : '读取联系人'}
                     </button>
                 </div>
                 {error && (

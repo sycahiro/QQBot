@@ -85,8 +85,8 @@ export function MemoryReview({
     return (
         <div className="memory-review">
             <button className="btn" disabled={disabled || busy} onClick={() => void generate()}>
-                <Sparkles size={14} />
-                {busy ? '正在处理…' : '整理预览'}
+                <Sparkles size={15} className={busy ? 'qq-scanning' : undefined} />
+                整理预览
             </button>
             <p className="action-notice">让模型整理该成员的记忆，检查结果后确认应用。</p>
             <Notice title="记忆整理" message={error} error onClose={() => setError('')} />

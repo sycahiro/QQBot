@@ -1,4 +1,4 @@
-import { BookmarkPlus, Undo2 } from 'lucide-react';
+import { BookmarkPlus, LoaderCircle, Undo2 } from 'lucide-react';
 import type { ArchivedMessage } from '../business';
 
 export function ArchiveMessage({
@@ -40,7 +40,8 @@ export function ArchiveMessage({
                 <div className="archive-message-actions">
                     {item.hasForward && !item.text.startsWith('[合并转发 共') && (
                         <button className="btn btn-sm" disabled={busy} onClick={onExpand}>
-                            {busy ? '请稍候…' : '展开转发'}
+                            {busy && <LoaderCircle size={13} className="qq-scanning" />}
+                            展开转发
                         </button>
                     )}
                     {item.hasImage && (

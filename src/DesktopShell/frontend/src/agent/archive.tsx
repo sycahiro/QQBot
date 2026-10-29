@@ -418,6 +418,7 @@ export function Archive({ ready }: { ready: boolean }) {
                 }}
                 refresh={{
                     disabled: busy,
+                    loading: busy,
                     run: () => {
                         setError('');
                         refresh((v) => v + 1);
@@ -430,7 +431,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         disabled={busy || !selected}
                         onClick={() => void process()}
                     >
-                        <Play size={14} />
+                        <Play size={15} />
                         处理一次
                     </button>
                 }
@@ -448,7 +449,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         aria-pressed={unreadOnly}
                         onClick={() => setUnreadOnly((value) => !value)}
                     >
-                        <ListFilter size={14} />
+                        <ListFilter size={15} />
                         {unreadOnly ? '显示全部聊天' : '仅看未读'}
                     </button>
                     <button
@@ -456,7 +457,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         disabled={busy || loadingOlder || !current?.unread}
                         onClick={() => void markRead(false)}
                     >
-                        <CheckCheck size={14} />
+                        <CheckCheck size={15} />
                         当前聊天标记已读
                     </button>
                     <button

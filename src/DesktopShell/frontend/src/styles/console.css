@@ -180,7 +180,7 @@
 }
 .console-panel-heading p {
     margin-top: 5px;
-    font-size: 11px;
+    font-size: 12px;
     color: var(--muted-foreground);
 }
 .console-content .ui-card {

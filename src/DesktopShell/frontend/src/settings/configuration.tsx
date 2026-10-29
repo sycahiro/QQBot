@@ -489,8 +489,13 @@ export function Configuration({
                                         disabled={Boolean(checking) || !config.api.baseUrl}
                                         onClick={() => void check('list')}
                                     >
-                                        <List size={15} />
-                                        {checking === 'list' ? '正在获取…' : '获取模型列表'}
+                                        <List
+                                            size={15}
+                                            className={
+                                                checking === 'list' ? 'qq-scanning' : undefined
+                                            }
+                                        />
+                                        获取模型列表
                                     </button>
                                     <button
                                         type="button"
@@ -502,8 +507,13 @@ export function Configuration({
                                         }
                                         onClick={() => void check('test')}
                                     >
-                                        <Radio size={15} />
-                                        {checking === 'test' ? '正在测试…' : '基础连通性'}
+                                        <Radio
+                                            size={15}
+                                            className={
+                                                checking === 'test' ? 'qq-scanning' : undefined
+                                            }
+                                        />
+                                        基础连通性
                                     </button>
                                     <button
                                         type="button"
@@ -515,8 +525,13 @@ export function Configuration({
                                         }
                                         onClick={() => void check('tools')}
                                     >
-                                        <Wrench size={15} />
-                                        {checking === 'tools' ? '正在测试工具…' : '测试工具调用'}
+                                        <Wrench
+                                            size={15}
+                                            className={
+                                                checking === 'tools' ? 'qq-scanning' : undefined
+                                            }
+                                        />
+                                        测试工具调用
                                     </button>
                                 </div>
                                 <div className="form-wide model-subheading">
@@ -580,7 +595,9 @@ export function Configuration({
                             <div className="console-panel-heading">
                                 <div>
                                     <h2>表情库</h2>
-                                    <p>让机器人收藏和使用聊天图片。</p>
+                                    <p>
+                                        让机器人收藏和使用聊天图片；需在系统设置的“图片处理”中开启看图，发送表情还需开启发图。
+                                    </p>
                                 </div>
                                 <Smile size={18} />
                             </div>
@@ -618,9 +635,6 @@ export function Configuration({
                                     />
                                     允许拍一拍（每次处理最多一次）
                                 </label>
-                                <p className="form-wide action-notice">
-                                    请在系统设置的“图片处理”中开启看图；发送表情还需开启发图。
-                                </p>
                             </div>
                         </section>
                         <section className="ui-card console-panel">
@@ -639,8 +653,11 @@ export function Configuration({
                                         disabled={loadingPersona || Boolean(state.saving)}
                                         onClick={() => void applyDefaultPersona()}
                                     >
-                                        <UserRound size={14} />
-                                        {loadingPersona ? '正在读取' : '使用默认人设'}
+                                        <UserRound
+                                            size={15}
+                                            className={loadingPersona ? 'qq-scanning' : undefined}
+                                        />
+                                        使用默认人设
                                     </button>
                                     <p className="action-notice">
                                         填入系统设置中的角色设定和补充规则，修改后请保存。

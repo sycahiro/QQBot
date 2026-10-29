@@ -207,8 +207,8 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                             className="btn"
                             disabled={busy || !(kind === 'search' ? query : url).trim()}
                         >
-                            <Play size={14} />
-                            {busy ? '正在测试…' : '开始测试'}
+                            <Play size={15} className={busy ? 'qq-scanning' : undefined} />
+                            开始测试
                         </button>
                         {busy && <span className="action-notice">正在等待网站返回内容</span>}
                     </div>

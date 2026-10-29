@@ -193,8 +193,8 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                         <p>查看日志、账号、临时文件和 SnowLuma 服务数据的已统计占用。</p>
                     </div>
                     <button className="btn" disabled={busy} onClick={() => void load()}>
-                        <RefreshCw size={15} />
-                        {busy ? '正在处理…' : '刷新'}
+                        <RefreshCw size={15} className={busy ? 'qq-scanning' : undefined} />
+                        刷新
                     </button>
                 </div>
                 {data ? (

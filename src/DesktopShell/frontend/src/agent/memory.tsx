@@ -197,7 +197,11 @@ export function Memory({ ready }: { ready: boolean }) {
                     disabled: busy || !chats.some((c) => c.count),
                     run: () => void remove(true),
                 }}
-                refresh={{ disabled: busy || hasDrafts, run: () => refresh((v) => v + 1) }}
+                refresh={{
+                    disabled: busy || hasDrafts,
+                    loading: busy,
+                    run: () => refresh((v) => v + 1),
+                }}
             />
             <Notice title="记忆操作" message={error} error onClose={() => setError('')} />
             <Notice title="记忆操作" message={notice} onClose={() => setNotice('')} />

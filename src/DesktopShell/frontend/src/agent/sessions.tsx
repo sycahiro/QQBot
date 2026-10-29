@@ -189,7 +189,11 @@ export function Sessions({ ready }: { ready: boolean }) {
                     run: () => void remove(false),
                 }}
                 clear={{ disabled: busy || !items.length, run: () => void remove(true) }}
-                refresh={{ disabled: busy, run: () => refresh((v) => v + 1) }}
+                refresh={{
+                    disabled: busy,
+                    loading: busy,
+                    run: () => refresh((v) => v + 1),
+                }}
             />
             <Notice title="会话操作" message={error} error onClose={() => setError('')} />
             <Notice title="会话读取" message={readError} error onClose={() => {}} />
@@ -246,9 +250,9 @@ export function Sessions({ ready }: { ready: boolean }) {
                                 onClick={() => void control(current?.status === 'running')}
                             >
                                 {current?.status === 'running' ? (
-                                    <Square size={14} />
+                                    <Square size={15} />
                                 ) : (
-                                    <RotateCcw size={14} />
+                                    <RotateCcw size={15} />
                                 )}
                                 {current?.status === 'running' ? '停止' : '重新处理'}
                             </button>

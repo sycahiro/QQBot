@@ -3,7 +3,7 @@ import { RefreshCw, Trash2 } from 'lucide-react';
 import { AnimatedList } from './animated-list';
 import { DetailPanel } from './detail-panel';
 
-type Action = { run: () => void; disabled?: boolean };
+type Action = { run: () => void; disabled?: boolean; loading?: boolean };
 
 /** Common controls and placement; each page keeps its own guarded operations. */
 export function RecordToolbar({
@@ -47,7 +47,7 @@ export function RecordToolbar({
                     disabled={refresh.disabled}
                     onClick={refresh.run}
                 >
-                    <RefreshCw size={14} />
+                    <RefreshCw size={15} className={refresh.loading ? 'qq-scanning' : undefined} />
                     刷新
                 </button>
             </div>

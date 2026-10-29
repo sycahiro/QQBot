@@ -39,12 +39,12 @@ export function ArchiveMessage({
             {item.mid && !item.withdrawn && (item.hasImage || item.hasForward) && (
                 <div className="archive-message-actions">
                     {item.hasForward && !item.text.startsWith('[合并转发 共') && (
-                        <button className="qq-refresh" disabled={busy} onClick={onExpand}>
+                        <button className="btn btn-sm" disabled={busy} onClick={onExpand}>
                             {busy ? '请稍候…' : '展开转发'}
                         </button>
                     )}
                     {item.hasImage && (
-                        <button className="qq-refresh" disabled={busy} onClick={onCollect}>
+                        <button className="btn btn-sm" disabled={busy} onClick={onCollect}>
                             <BookmarkPlus size={13} />
                             收藏首张图片
                         </button>

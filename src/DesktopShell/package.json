@@ -12,13 +12,12 @@
   "engines": {
     "node": ">=24.21.0 <25"
   },
-  "dependencies": {
-    "lucide-react": "0.469.0",
-    "motion": "12.38.0",
-    "react": "19.2.5",
-    "react-dom": "19.2.5",
-    "typescript": "6.0.2"
-  },
+    "dependencies": {
+        "lucide-react": "0.469.0",
+        "react": "19.2.5",
+        "react-dom": "19.2.5",
+        "typescript": "6.0.2"
+    },
   "devDependencies": {
     "@types/node": "24.19.2",
     "@types/react": "19.2.14",

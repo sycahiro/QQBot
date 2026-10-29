@@ -1,9 +1,8 @@
-import { uiTransition } from '../motion';
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Image, Save, Radio, List, SquarePen, Trash2 } from 'lucide-react';
 import type { BotConfig } from '../business';
 import { Select } from '../components/select';
+import { Collapse } from '../components/presence';
 import { TokenLimit } from './token-limit';
 import { Notice } from '../components/notice';
 import { blankApi } from '../agent/settings-editor';
@@ -210,7 +209,6 @@ function MediaModel({
             alive.current = false;
         };
     }, []);
-    const reduced = useReducedMotion();
     const drafts = useRef(
         new Map<
             string,
@@ -344,11 +342,7 @@ function MediaModel({
                             ]}
                         />
                         {current && !editing && (
-                            <button
-                                type="button"
-                                className="qq-refresh"
-                                onClick={() => edit(current)}
-                            >
+                            <button type="button" className="btn" onClick={() => edit(current)}>
                                 <SquarePen size={15} />
                                 编辑此配置
                             </button>
@@ -369,154 +363,139 @@ function MediaModel({
                         </div>
                     </div>
                 )}
-                <AnimatePresence initial={false}>
-                    {editing && (
-                        <motion.div
-                            className="form-wide"
-                            initial={{ height: reduced ? 'auto' : 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: reduced ? 'auto' : 0, opacity: 0 }}
-                            transition={uiTransition(reduced)}
-                            style={{ overflow: 'hidden' }}
-                        >
-                            <div className="bot-form-grid">
-                                <label>
-                                    配置名称
-                                    <input
-                                        value={name}
-                                        maxLength={64}
-                                        onChange={(e) => setName(e.target.value)}
-                                    />
-                                </label>
-                                <div className="bot-field">
-                                    <span>API 协议</span>
-                                    <Select
-                                        label={label + 'API 协议'}
-                                        value={api.protocol}
-                                        disabled={disabled}
-                                        onChange={(value) =>
-                                            setApi({
-                                                ...api,
-                                                protocol: value as typeof api.protocol,
-                                            })
-                                        }
-                                        options={[
-                                            { value: 'chat', label: 'Chat Completions' },
-                                            { value: 'responses', label: 'Responses' },
-                                            { value: 'anthropic', label: 'Anthropic Messages' },
-                                        ]}
-                                    />
-                                </div>
-                                <label className="form-wide">
-                                    API 地址
-                                    <input
-                                        type="url"
-                                        value={api.baseUrl}
-                                        onChange={(e) =>
-                                            setApi({ ...api, baseUrl: e.target.value })
-                                        }
-                                        placeholder="https://api.example.com/v1"
-                                    />
-                                </label>
-                                <div className="bot-field form-wide">
-                                    <span>模型名称</span>
-                                    <Select
-                                        label={label + '名称'}
-                                        editable
-                                        disabled={disabled}
-                                        value={api.model}
-                                        onChange={(model) => setApi({ ...api, model })}
-                                        options={models.map((value) => ({ value, label: value }))}
-                                    />
-                                </div>
-                                <div className="bot-field form-wide">
-                                    <span>API 密钥</span>
-                                    <div className="api-key-row">
-                                        <input
-                                            aria-label={label + 'API 密钥'}
-                                            type="password"
-                                            autoComplete="new-password"
-                                            maxLength={8192}
-                                            disabled={clear}
-                                            value={clear ? '' : key}
-                                            placeholder={
-                                                clear
-                                                    ? '保存后清除密钥'
-                                                    : api.apiKeyConfigured
-                                                      ? '已保存密钥；填写新值可替换'
-                                                      : '填写密钥'
-                                            }
-                                            onChange={(e) => setKey(e.target.value)}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="qq-refresh"
-                                            onClick={() => setClear(!clear)}
-                                        >
-                                            <Trash2 size={14} />
-                                            {clear ? '撤销清除' : '清除密钥'}
-                                        </button>
-                                    </div>
-                                </div>
-                                <label className="form-wide form-check">
-                                    <input
-                                        type="checkbox"
-                                        checked={api.sendTemperature}
-                                        onChange={(e) =>
-                                            setApi({ ...api, sendTemperature: e.target.checked })
-                                        }
-                                    />
-                                    发送 Temperature 参数
-                                </label>
-                                <label>
-                                    Temperature
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={2}
-                                        step={0.1}
-                                        value={api.temperature}
-                                        disabled={!api.sendTemperature}
-                                        onChange={(e) =>
-                                            setApi({ ...api, temperature: Number(e.target.value) })
-                                        }
-                                    />
-                                </label>
-                                <label>
-                                    请求超时（秒）
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={300}
-                                        value={api.timeoutMs / 1000}
-                                        onChange={(e) =>
-                                            setApi({
-                                                ...api,
-                                                timeoutMs: Number(e.target.value) * 1000,
-                                            })
-                                        }
-                                    />
-                                </label>
-                                <TokenLimit
-                                    api={api}
-                                    onChange={(field, value) => setApi({ ...api, [field]: value })}
+                <Collapse open={editing}>
+                    <div className="form-wide">
+                        <div className="bot-form-grid">
+                            <label>
+                                配置名称
+                                <input
+                                    value={name}
+                                    maxLength={64}
+                                    onChange={(e) => setName(e.target.value)}
+                                />
+                            </label>
+                            <div className="bot-field">
+                                <span>API 协议</span>
+                                <Select
+                                    label={label + 'API 协议'}
+                                    value={api.protocol}
+                                    disabled={disabled}
+                                    onChange={(value) =>
+                                        setApi({
+                                            ...api,
+                                            protocol: value as typeof api.protocol,
+                                        })
+                                    }
+                                    options={[
+                                        { value: 'chat', label: 'Chat Completions' },
+                                        { value: 'responses', label: 'Responses' },
+                                        { value: 'anthropic', label: 'Anthropic Messages' },
+                                    ]}
                                 />
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <label className="form-wide">
+                                API 地址
+                                <input
+                                    type="url"
+                                    value={api.baseUrl}
+                                    onChange={(e) => setApi({ ...api, baseUrl: e.target.value })}
+                                    placeholder="https://api.example.com/v1"
+                                />
+                            </label>
+                            <div className="bot-field form-wide">
+                                <span>模型名称</span>
+                                <Select
+                                    label={label + '名称'}
+                                    editable
+                                    disabled={disabled}
+                                    value={api.model}
+                                    onChange={(model) => setApi({ ...api, model })}
+                                    options={models.map((value) => ({ value, label: value }))}
+                                />
+                            </div>
+                            <div className="bot-field form-wide">
+                                <span>API 密钥</span>
+                                <div className="api-key-row">
+                                    <input
+                                        aria-label={label + 'API 密钥'}
+                                        type="password"
+                                        autoComplete="new-password"
+                                        maxLength={8192}
+                                        disabled={clear}
+                                        value={clear ? '' : key}
+                                        placeholder={
+                                            clear
+                                                ? '保存后清除密钥'
+                                                : api.apiKeyConfigured
+                                                  ? '已保存密钥；填写新值可替换'
+                                                  : '填写密钥'
+                                        }
+                                        onChange={(e) => setKey(e.target.value)}
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn"
+                                        onClick={() => setClear(!clear)}
+                                    >
+                                        <Trash2 size={14} />
+                                        {clear ? '撤销清除' : '清除密钥'}
+                                    </button>
+                                </div>
+                            </div>
+                            <label className="form-wide form-check">
+                                <input
+                                    type="checkbox"
+                                    checked={api.sendTemperature}
+                                    onChange={(e) =>
+                                        setApi({ ...api, sendTemperature: e.target.checked })
+                                    }
+                                />
+                                发送 Temperature 参数
+                            </label>
+                            <label>
+                                Temperature
+                                <input
+                                    type="number"
+                                    min={0}
+                                    max={2}
+                                    step={0.1}
+                                    value={api.temperature}
+                                    disabled={!api.sendTemperature}
+                                    onChange={(e) =>
+                                        setApi({ ...api, temperature: Number(e.target.value) })
+                                    }
+                                />
+                            </label>
+                            <label>
+                                请求超时（秒）
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={300}
+                                    value={api.timeoutMs / 1000}
+                                    onChange={(e) =>
+                                        setApi({
+                                            ...api,
+                                            timeoutMs: Number(e.target.value) * 1000,
+                                        })
+                                    }
+                                />
+                            </label>
+                            <TokenLimit
+                                api={api}
+                                onChange={(field, value) => setApi({ ...api, [field]: value })}
+                            />
+                        </div>
+                    </div>
+                </Collapse>
                 <div className="form-wide model-check-actions">
                     {editing && (
-                        <button
-                            type="button"
-                            className="qq-refresh"
-                            onClick={() => void check(true)}
-                        >
+                        <button type="button" className="btn" onClick={() => void check(true)}>
                             <List size={14} />
                             {checking === 'list' ? '正在获取…' : '获取模型列表'}
                         </button>
                     )}
-                    <button type="button" className="qq-refresh" onClick={() => void check(false)}>
+                    <button type="button" className="btn" onClick={() => void check(false)}>
                         <Radio size={14} />
                         {checking === 'image' ? '正在测试图片…' : '测试图片输入'}
                     </button>
@@ -534,7 +513,7 @@ function MediaModel({
                 <button
                     type="button"
                     disabled={disabled}
-                    className="qq-refresh primary-button"
+                    className="btn btn-primary"
                     onClick={() => void save()}
                 >
                     <Save size={14} />

@@ -32,10 +32,9 @@ from ..extensions.market import MarketCatalog, page_url
 from ..qq.discovery import DiscoveryError
 from ..qq.engine import EngineError
 from ..qq.selection import AccountSelection
-from ..qq.snowluma import ONEBOT_DEFAULT_CONFIG
-from . import contacts, debug, dependencies
+from ..qq.snowluma import WEBUI_PORT
+from . import contacts, dependencies
 from .appearance import Appearance
-from .debug_files import DebugFiles
 from .diagnostics import read_log_entries
 from .resources import ResourceMonitor
 from .storage import StorageManagement
@@ -71,7 +70,6 @@ class DesktopBridge:
         agent=None,
         sessions=None,
         memory=None,
-        activity=None,
         *,
         stickers=None,
         residence=None,
@@ -99,16 +97,13 @@ class DesktopBridge:
         self._models = ModelChecks()
         self._reviews = MemoryReviews()
         self._web = WebClient()
-        self._debug_activity, self._debug_recent = activity or debug.Activity(), {}
-        self._debug_lock = threading.Lock()
         self._native_fallback_lock = threading.Lock()
-        self._debug_files = DebugFiles(paths.runtime / "accounts")
         self._storage = StorageManagement(paths, accounts, connection, agent)
 
     def _version(self):
         try:
             return self._paths.version
-        except OSError, ValueError, KeyError, TypeError:
+        except (OSError, ValueError, KeyError, TypeError):
             logging.exception("应用版本信息无法读取，请检查 app/package.json")
             return "unknown"
 
@@ -156,6 +151,53 @@ class DesktopBridge:
             return {"stage": "stopped", "error": None}
         return self._discovery.service_status()
 
+    def _snowluma_webui_password(self):
+        try:
+            return json.loads(
+                (self._paths.runtime / "secrets" / "snowluma-service.json").read_text(
+                    encoding="utf-8"
+                )
+            )["password"]
+        except (OSError, ValueError, KeyError):
+            return None
+
+    # -- 密码备忘（用户手动保存的 WebUI 密码，仅存本机） ---------------------
+
+    def _memo_file(self):
+        return self._paths.runtime / "secrets" / "webui-password.json"
+
+    @_guarded
+    def get_webui_password_memo(self):
+        def read():
+            try:
+                data = json.loads(self._memo_file().read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                return {"password": None}
+            except (OSError, ValueError) as error:
+                raise ValueError("密码备忘文件无法读取，请检查 runtime/secrets") from error
+            if not isinstance(data, dict) or not isinstance(data.get("password"), str):
+                return {"password": None}
+            return {"password": data["password"]}
+
+        return self._business(read)
+
+    @_guarded
+    def save_webui_password_memo(self, password):
+        def save():
+            if not isinstance(password, str) or len(password) > 200:
+                raise ValueError("密码备忘内容无效")
+            file = self._memo_file()
+            file.parent.mkdir(parents=True, exist_ok=True)
+            temporary = file.with_suffix(".tmp")
+            temporary.write_text(
+                json.dumps({"password": password} if password else {}),
+                encoding="utf-8",
+            )
+            os.replace(temporary, file)
+            return {"password": password or None}
+
+        return self._business(save)
+
     @_guarded
     def start_snowluma(self):
         """应用内手动启动 SnowLuma（与浏览器控制台同模式）；不随检测隐式拉起。"""
@@ -185,85 +227,21 @@ class DesktopBridge:
         status = self._discovery.stop_service()
         return {"ok": True, "stage": status["stage"]}
 
-    # -- 引擎设置（onebot.json 的受控字段，其余键原样保留） -----------------
+    @_guarded
+    def open_snowluma_webui(self):
+        """在系统浏览器打开 SnowLuma 自带控制台；引擎的全部设置都在那里改。"""
 
-    @staticmethod
-    def _validate_engine_settings(status_command, history_sync):
-        if not isinstance(status_command, dict) or not isinstance(history_sync, dict):
-            raise ValueError("引擎设置格式无效")
-        if set(status_command) != {"enabled", "swallow", "cooldownSeconds", "trigger"}:
-            raise ValueError("状态命令设置字段不完整")
-        if not isinstance(history_sync, dict) or set(history_sync) != {"enabled"}:
-            raise ValueError("历史回填设置字段不完整")
-        enabled, swallow, cooldown, trigger = (
-            status_command["enabled"],
-            status_command["swallow"],
-            status_command["cooldownSeconds"],
-            status_command["trigger"],
-        )
-        if type(enabled) is not bool or type(swallow) is not bool:
-            raise ValueError("状态命令开关必须是布尔值")
-        if type(cooldown) is not int or not 0 <= cooldown <= 3600:
-            raise ValueError("状态命令冷却必须是 0 到 3600 的整数秒")
-        if not isinstance(trigger, str) or not 1 <= len(trigger.strip()) <= 32:
-            raise ValueError("触发词必须是 1 到 32 个字符")
-        if type(history_sync["enabled"]) is not bool:
-            raise ValueError("历史回填开关必须是布尔值")
-        return {
-            "statusCommand": {
-                "enabled": enabled,
-                "swallow": swallow,
-                "cooldownSeconds": cooldown,
-                "trigger": trigger.strip(),
-            },
-            "historySync": {"enabled": history_sync["enabled"]},
-        }
+        def open_ui():
+            if self._discovery is None:
+                raise ValueError("QQ 检测服务尚未就绪")
+            if not self._discovery.service.running:
+                raise ValueError("SnowLuma 服务未启动，请先在「连接」页启动引擎")
+            url = f"http://127.0.0.1:{WEBUI_PORT}"
+            if not webbrowser.open(url, new=2):
+                raise ValueError("无法打开系统浏览器，请检查浏览器设置")
+            return {"url": url, "password": self._snowluma_webui_password()}
 
-    def get_engine_settings(self):
-        def read():
-            config_file = self._paths.snowluma_onebot_config
-            if config_file.exists():
-                try:
-                    current = json.loads(config_file.read_text(encoding="utf-8"))
-                except (OSError, ValueError) as error:
-                    raise ValueError("引擎配置无法读取，请检查 data/services/snowluma") from error
-                if not isinstance(current, dict):
-                    raise ValueError("引擎配置格式无效")
-            else:
-                current = json.loads(json.dumps(ONEBOT_DEFAULT_CONFIG))
-            return {
-                "statusCommand": current.get("statusCommand"),
-                "historySync": current.get("historySync"),
-                "engineConfigured": config_file.exists(),
-            }
-
-        return self._business(read)
-
-    def save_engine_settings(self, status_command, history_sync):
-        def save():
-            sections = self._validate_engine_settings(status_command, history_sync)
-            config_file = self._paths.snowluma_onebot_config
-            if config_file.exists():
-                try:
-                    config = json.loads(config_file.read_text(encoding="utf-8"))
-                except (OSError, ValueError) as error:
-                    raise ValueError("引擎配置无法读取，请检查 data/services/snowluma") from error
-                if not isinstance(config, dict):
-                    raise ValueError("引擎配置格式无效")
-            else:
-                config = json.loads(json.dumps(ONEBOT_DEFAULT_CONFIG))
-            config["statusCommand"] = sections["statusCommand"]
-            config["historySync"] = sections["historySync"]
-            config_file.parent.mkdir(parents=True, exist_ok=True)
-            temporary = config_file.with_suffix(".tmp")
-            temporary.write_text(json.dumps(config, indent=2), encoding="utf-8")
-            os.replace(temporary, config_file)
-            return {
-                "statusCommand": config["statusCommand"],
-                "historySync": config["historySync"],
-            }
-
-        return self._business(save)
+        return self._business(open_ui)
 
     @_guarded
     def get_qq_processes(self):
@@ -459,11 +437,11 @@ class DesktopBridge:
                             if kind == "group"
                             else item.get("nickname") or item.get("remark")
                         )
-            except EngineError, ValueError:
+            except (EngineError, ValueError):
                 logging.info("Conversation names unavailable for %s", kind)
         try:
             self._messages.set_names(account, names)
-        except sqlite3.Error, ValueError:
+        except (sqlite3.Error, ValueError):
             logging.exception("Conversation names could not be saved")
 
     def _client_account(self, status):
@@ -686,7 +664,7 @@ class DesktopBridge:
         # unsaved profile draft. This also updates while the QQ account is offline.
         try:
             model = self._global_settings.values()["api"]["model"] if self._global_settings else ""
-        except ValueError, OSError:
+        except (ValueError, OSError):
             model = ""
         return {**status, "model": model, "workspace": workspace or self._agent_workspace()}
 
@@ -1248,6 +1226,9 @@ class DesktopBridge:
             "python": "https://www.python.org/",
             "node": "https://nodejs.org/",
             "snowluma": "https://snowluma.github.io/",
+            "author": "https://github.com/jiuyv",
+            "repo": "https://github.com/jiuyv/QQBot",
+            "issues": "https://github.com/jiuyv/QQBot/issues",
         }
 
         def launch():
@@ -1263,90 +1244,3 @@ class DesktopBridge:
             return {"url": url}
 
         return self._business(launch)
-
-    def get_debug_catalog(self, account):
-        def read():
-            if not isinstance(account, str):
-                raise ValueError("请先连接 QQ")
-            selected = self._account(account)
-            actions = debug.catalog(self._connection)
-            self._account(selected)
-            return {"account": selected, "actions": actions}
-
-        return self._business(read)
-
-    def get_debug_activity(self, account, after=0):
-        def read():
-            if not isinstance(account, str):
-                raise ValueError("请先连接 QQ")
-            selected = self._account(account)
-            return {"account": selected, **self._debug_activity.read(selected, after)}
-
-        return self._business(read)
-
-    def run_debug_action(self, action, params, account):
-        def run():
-            if not isinstance(account, str):
-                raise ValueError("请先连接 QQ")
-            selected = self._account(account)
-            if not self._debug_lock.acquire(blocking=False):
-                raise ValueError("正在执行调试操作，请等待结果")
-            started = time.monotonic()
-            try:
-                result = debug.invoke(self, action, params, selected)
-                self._account(selected)
-                detail = debug.safe_detail(result)
-                self._debug_activity.add(
-                    selected,
-                    "action",
-                    f"{action} · 已返回结果",
-                    {
-                        "action": action,
-                        "parameters": params,
-                        "result": detail,
-                        "durationMs": round((time.monotonic() - started) * 1000),
-                    },
-                )
-                return {"account": selected, "result": detail}
-            except Exception as error:
-                self._debug_activity.add(
-                    selected,
-                    "error",
-                    f"{action} · 执行失败",
-                    {
-                        "action": action,
-                        "parameters": params,
-                        "error": str(error),
-                        "durationMs": round((time.monotonic() - started) * 1000),
-                    },
-                )
-                raise
-            finally:
-                self._debug_lock.release()
-
-        return self._business(run)
-
-    def stage_debug_file(self, kind, name, encoded, account):
-        def stage():
-            if not isinstance(account, str):
-                raise ValueError("请先连接 QQ")
-            selected = self._account(account)
-            item = self._debug_files.stage(selected, kind, name, encoded)
-            try:
-                self._account(selected)
-            except ValueError:
-                self._debug_files.discard(selected, item["token"])
-                raise
-            return {"account": selected, "attachment": item}
-
-        return self._business(stage)
-
-    def discard_debug_file(self, token, account):
-        def discard():
-            if not isinstance(account, str):
-                raise ValueError("请先连接 QQ")
-            selected = self._account(account)
-            self._debug_files.discard(selected, token)
-            return {"account": selected}
-
-        return self._business(discard)

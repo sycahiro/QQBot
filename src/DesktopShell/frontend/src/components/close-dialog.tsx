@@ -1,9 +1,8 @@
-import { uiTransition } from '../motion';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { MonitorDown, Power, X } from 'lucide-react';
 import { lockModalBackground } from './modal-background';
+import { usePresence } from './presence';
 
 export function CloseDialog() {
     const [open, setOpen] = useState(false),
@@ -11,8 +10,8 @@ export function CloseDialog() {
         [error, setError] = useState('');
     const dialog = useRef<HTMLDivElement>(null),
         working = useRef(false);
-    const previousFocus = useRef<HTMLElement | null>(null),
-        reduced = useReducedMotion();
+    const previousFocus = useRef<HTMLElement | null>(null);
+    const { mounted, leaving } = usePresence(open);
     useEffect(() => {
         const request = () => {
             previousFocus.current = document.activeElement as HTMLElement;
@@ -79,68 +78,51 @@ export function CloseDialog() {
             if (previousFocus.current?.isConnected) previousFocus.current.focus();
         };
     }, [open]);
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined' || !mounted) return null;
     return createPortal(
-        <AnimatePresence>
-            {open && (
-                <motion.div
-                    className="window-dialog-backdrop"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={uiTransition(reduced)}
+        <div className={'window-dialog-backdrop' + (leaving ? ' is-leaving' : '')}>
+            <div
+                ref={dialog}
+                className="ui-card window-close-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="window-close-title"
+            >
+                <button
+                    className="btn btn-icon window-dialog-dismiss"
+                    aria-label="取消关闭"
+                    data-cancel
+                    disabled={busy}
+                    onClick={() => void resolve('cancel')}
                 >
-                    <motion.div
-                        ref={dialog}
-                        className="ui-card window-close-dialog"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="window-close-title"
-                        initial={reduced ? false : { opacity: 0, y: 12, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                    <X size={18} />
+                </button>
+                <span className="empty-icon">
+                    <MonitorDown size={26} />
+                </span>
+                <h2 id="window-close-title">关闭 QQBot</h2>
+                <p>隐藏到托盘可继续接收消息和运行机器人；退出会停止本应用。</p>
+                <div className="window-close-choices">
+                    <button className="btn" disabled={busy} onClick={() => void resolve('hide')}>
+                        <MonitorDown size={17} />
+                        隐藏到托盘
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        disabled={busy}
+                        onClick={() => void resolve('exit')}
                     >
-                        <button
-                            className="icon-button window-dialog-dismiss"
-                            aria-label="取消关闭"
-                            data-cancel
-                            disabled={busy}
-                            onClick={() => void resolve('cancel')}
-                        >
-                            <X size={18} />
-                        </button>
-                        <span className="empty-icon">
-                            <MonitorDown size={26} />
-                        </span>
-                        <h2 id="window-close-title">关闭 QQBot</h2>
-                        <p>隐藏到托盘可继续接收消息和运行机器人；退出会停止本应用。</p>
-                        <div className="window-close-choices">
-                            <button
-                                className="qq-refresh"
-                                disabled={busy}
-                                onClick={() => void resolve('hide')}
-                            >
-                                <MonitorDown size={17} />
-                                隐藏到托盘
-                            </button>
-                            <button
-                                className="qq-refresh primary-button"
-                                disabled={busy}
-                                onClick={() => void resolve('exit')}
-                            >
-                                <Power size={17} />
-                                退出应用
-                            </button>
-                        </div>
-                        {error && (
-                            <p className="desktop-error" role="alert">
-                                {error}
-                            </p>
-                        )}
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>,
+                        <Power size={17} />
+                        退出应用
+                    </button>
+                </div>
+                {error && (
+                    <p className="desktop-error" role="alert">
+                        {error}
+                    </p>
+                )}
+            </div>
+        </div>,
         document.body,
     );
 }

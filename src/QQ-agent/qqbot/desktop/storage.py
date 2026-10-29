@@ -54,7 +54,7 @@ class StorageManagement:
             raise ValueError("存储设置文件过大，请检查文件")
         try:
             return policy(json.loads(file.read_text(encoding="utf-8")))
-        except json.JSONDecodeError, UnicodeError:
+        except (json.JSONDecodeError, UnicodeError):
             raise ValueError("存储设置无法读取，请检查文件") from None
 
     def _log_groups(self):
@@ -248,7 +248,7 @@ class StorageManagement:
                 result = self._prune_logs(self._policy())
                 if result["failures"]:
                     logging.warning("旧日志清理遇到 %d 个占用或权限问题", len(result["failures"]))
-            except OSError, ValueError:
+            except (OSError, ValueError):
                 logging.exception("日志保留策略检查失败，保留原文件")
 
     def cleanup(self, request):
@@ -329,7 +329,7 @@ class StorageManagement:
                             cleaned = self._accounts.storage_clear(account, category)
                         else:
                             raise ValueError("账号存储尚未就绪")
-                    except OSError, sqlite3.Error:
+                    except (OSError, sqlite3.Error):
                         logging.exception("清理账号 %s 的 %s 未完成", account, category)
                         result["failures"].append(f"QQ {account} 的数据被占用或无法写入")
                         continue

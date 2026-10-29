@@ -1,9 +1,6 @@
-import { uiTransition } from './motion';
 import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     Bot,
-    Bug,
     Cable,
     Clock3,
     LayoutDashboard,
@@ -30,9 +27,10 @@ import { Resources } from './resources';
 import { QqAccounts } from './qq';
 import { AgentWorkspace } from './agent';
 import { resetSettingsEditor } from './agent/use-settings';
-import { Logs, Diagnostics } from './diagnostics';
+import { Logs } from './diagnostics';
 import { SystemSettings } from './settings';
 import { CloseDialog } from './components/close-dialog';
+import { useNavHighlight } from './components/nav-highlight';
 import { Notice } from './components/notice';
 import { StatusSwap } from './components/status-swap';
 
@@ -65,7 +63,6 @@ const pages = [
         icon: Bot,
         caption: '个人 QQ 的会话、记忆与自动回复',
     },
-    { id: 'debug', group: '管理', title: '调试工具', icon: Bug, caption: '检查连接与消息操作' },
     {
         id: 'settings',
         group: '管理',
@@ -88,7 +85,6 @@ export function DesktopShell() {
         null,
     );
     const [snowStage, setSnowStage] = useState<string | null>(null);
-    const reduced = useReducedMotion();
     const current = pages.find((item) => item.id === page)!;
     const connected = Boolean(connection?.connected && connection.account?.uin);
     const agentCurrent = connected && status?.account === connection?.account?.uin;
@@ -142,6 +138,7 @@ export function DesktopShell() {
     useEffect(() => {
         resetSettingsEditor();
     }, [connection?.connected, connection?.account?.uin, connection?.account?.pid]);
+    const { navRef, highlightRef } = useNavHighlight(page);
     return (
         <div className="console-shell" data-desktop-ready={Boolean(info)}>
             <CloseDialog />
@@ -164,7 +161,8 @@ export function DesktopShell() {
                         <small>你的 AI 聊天工作台</small>
                     </span>
                 </button>
-                <nav aria-label="主导航">
+                <nav aria-label="主导航" ref={navRef}>
+                    <span className="console-nav-highlight" ref={highlightRef} aria-hidden="true" />
                     {groups.map((group) => (
                         <div className="nav-group" key={group}>
                             <p>{group}</p>
@@ -179,13 +177,6 @@ export function DesktopShell() {
                                             'console-nav-item' + (page === id ? ' is-active' : '')
                                         }
                                     >
-                                        {page === id && (
-                                            <motion.span
-                                                className="console-nav-highlight"
-                                                layoutId="nav"
-                                                transition={uiTransition(reduced)}
-                                            />
-                                        )}
                                         <Icon size={18} />
                                         <span>{title}</span>
                                     </button>
@@ -252,7 +243,7 @@ export function DesktopShell() {
                             </span>
                         </div>
                         <button
-                            className="icon-button"
+                            className="btn btn-icon"
                             aria-label="切换明暗主题"
 
                             onClick={() =>
@@ -274,69 +265,57 @@ export function DesktopShell() {
                             <div role="alert" className="desktop-error">
                                 {error}
                                 {!info && (
-                                    <button className="qq-refresh" onClick={retry}>
+                                    <button className="btn" onClick={retry}>
                                         重新连接窗口
                                     </button>
                                 )}
                             </div>
                         )}
-                        <AnimatePresence mode="wait" initial={false}>
-                            <motion.div
-                                key={page}
-                                initial={reduced ? false : { opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: reduced ? 0 : -6 }}
-                                transition={uiTransition(reduced)}
-                            >
-                                <div className="console-page-heading">
-                                    <div>
-                                        <p className="console-eyebrow">
-                                            {page === 'overview'
-                                                ? 'YOUR WORKSPACE'
-                                                : 'QQBOT DESKTOP'}
-                                        </p>
-                                        <h1>{page === 'overview' ? '工作台' : current.title}</h1>
-                                        <p>{current.caption}</p>
-                                    </div>
+                        <div className="page-enter" key={page}>
+                            <div className="console-page-heading">
+                                <div>
+                                    <p className="console-eyebrow">
+                                        {page === 'overview' ? 'YOUR WORKSPACE' : 'QQBOT DESKTOP'}
+                                    </p>
+                                    <h1>{page === 'overview' ? '工作台' : current.title}</h1>
+                                    <p>{current.caption}</p>
                                 </div>
-                                {page === 'overview' ? (
-                                    <Overview
-                                        key={
-                                            connection?.connected
-                                                ? `${connection.account?.uin}:${connection.account?.pid}`
-                                                : 'offline'
-                                        }
-                                        info={info}
-                                        connection={connection}
-                                        agent={status}
-                                    />
-                                ) : page === 'settings' ? (
-                                    <SystemSettings info={info} theme={theme} setTheme={setTheme} />
-                                ) : page === 'connect' ? (
-                                    <QqAccounts
-                                        ready={Boolean(info)}
-                                        connection={connection}
-                                        onConnectionChange={setConnection}
-                                        cached={qqDiscovery}
-                                        onDiscovery={setQqDiscovery}
-                                        serviceStage={snowStage}
-                                        onServiceStage={setSnowStage}
-                                    />
-                                ) : page === 'agent' ? (
-                                    <AgentWorkspace
-                                        ready={Boolean(info)}
-                                        status={status}
-                                        connection={connection}
-                                        onStatus={setStatus}
-                                        onConnect={() => setPage('connect')}
-                                    />
-                                ) : page === 'logs' ? (
-                                    <Logs ready={Boolean(info)} />
-                                ) : (
-                                    <Diagnostics ready={Boolean(info)} connection={connection} />
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
+                            </div>
+                            {page === 'overview' ? (
+                                <Overview
+                                    key={
+                                        connection?.connected
+                                            ? `${connection.account?.uin}:${connection.account?.pid}`
+                                            : 'offline'
+                                    }
+                                    info={info}
+                                    connection={connection}
+                                    agent={status}
+                                />
+                            ) : page === 'settings' ? (
+                                <SystemSettings info={info} theme={theme} setTheme={setTheme} />
+                            ) : page === 'connect' ? (
+                                <QqAccounts
+                                    ready={Boolean(info)}
+                                    connection={connection}
+                                    onConnectionChange={setConnection}
+                                    cached={qqDiscovery}
+                                    onDiscovery={setQqDiscovery}
+                                    serviceStage={snowStage}
+                                    onServiceStage={setSnowStage}
+                                />
+                            ) : page === 'agent' ? (
+                                <AgentWorkspace
+                                    ready={Boolean(info)}
+                                    status={status}
+                                    connection={connection}
+                                    onStatus={setStatus}
+                                    onConnect={() => setPage('connect')}
+                                />
+                            ) : page === 'logs' ? (
+                                <Logs ready={Boolean(info)} />
+                            ) : null}
+                        </div>
                     </div>
                 </main>
             </div>

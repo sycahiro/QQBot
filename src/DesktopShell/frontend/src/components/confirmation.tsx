@@ -1,4 +1,3 @@
-import { uiTransition } from '../motion';
 import {
     createContext,
     useCallback,
@@ -10,9 +9,9 @@ import {
     type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CircleAlert, Trash2, X } from 'lucide-react';
 import { lockModalBackground } from './modal-background';
+import { usePresence } from './presence';
 
 type Options = { title?: string; confirmLabel?: string; danger?: boolean };
 type Request = Options & { message: string; owner: symbol; resolve: (value: boolean) => void };
@@ -63,14 +62,7 @@ export function ConfirmationProvider({ children }: { children: ReactNode }) {
         <Context.Provider value={{ ask, cancel }}>
             {children}
             {typeof document !== 'undefined' &&
-                createPortal(
-                    <AnimatePresence>
-                        {request && (
-                            <Confirmation key="confirmation" request={request} settle={settle} />
-                        )}
-                    </AnimatePresence>,
-                    document.body,
-                )}
+                createPortal(<Confirmation request={request} settle={settle} />, document.body)}
         </Context.Provider>
     );
 }
@@ -86,13 +78,19 @@ function Confirmation({
     request,
     settle,
 }: {
-    request: Request;
+    request: Request | null;
     settle: (accepted: boolean) => void;
 }) {
     const dialog = useRef<HTMLDivElement>(null),
-        id = useId(),
-        reduced = useReducedMotion();
+        id = useId();
+    const { mounted, leaving } = usePresence(Boolean(request));
+    // Freeze the last request so the exit animation keeps its content.
+    const [shown, setShown] = useState<Request | null>(null);
     useEffect(() => {
+        if (request) setShown(request);
+    }, [request]);
+    useEffect(() => {
+        if (!mounted || !shown) return;
         const root = document.getElementById('root'),
             previous = document.activeElement as HTMLElement | null;
         const unlock = lockModalBackground(root);
@@ -135,63 +133,51 @@ function Confirmation({
             unlock();
             if (previous?.isConnected && !closing()) previous.focus();
         };
-    }, [settle]);
-    const Icon = request.danger ? Trash2 : CircleAlert;
+    }, [mounted, settle]);
+    if (!mounted || !shown) return null;
+    const Icon = shown.danger ? Trash2 : CircleAlert;
     return (
-        <motion.div
-            className="window-dialog-backdrop confirmation-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={uiTransition(reduced)}
+        <div
+            className={
+                'window-dialog-backdrop confirmation-backdrop' + (leaving ? ' is-leaving' : '')
+            }
         >
-            <motion.div
+            <div
                 ref={dialog}
                 className="ui-card window-close-dialog confirmation-dialog"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={id}
                 aria-describedby={id + '-body'}
-                initial={reduced ? false : { opacity: 0, y: 12, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                transition={uiTransition(reduced)}
             >
                 <button
                     type="button"
-                    className="icon-button window-dialog-dismiss"
+                    className="btn btn-icon window-dialog-dismiss"
                     aria-label="取消操作"
                     onClick={() => settle(false)}
                 >
                     <X size={18} />
                 </button>
-                <span className={'empty-icon' + (request.danger ? ' confirmation-danger' : '')}>
+                <span className={'empty-icon' + (shown.danger ? ' confirmation-danger' : '')}>
                     <Icon size={26} />
                 </span>
-                <h2 id={id}>{request.title || '确认操作'}</h2>
+                <h2 id={id}>{shown.title || '确认操作'}</h2>
                 <p id={id + '-body'} tabIndex={0}>
-                    {request.message}
+                    {shown.message}
                 </p>
                 <div className="window-close-choices">
-                    <button
-                        type="button"
-                        className="qq-refresh"
-                        data-cancel
-                        onClick={() => settle(false)}
-                    >
+                    <button type="button" className="btn" data-cancel onClick={() => settle(false)}>
                         取消
                     </button>
                     <button
                         type="button"
-                        className={
-                            'qq-refresh ' + (request.danger ? 'danger-button' : 'primary-button')
-                        }
+                        className={'btn ' + (shown.danger ? 'btn-danger' : 'btn-primary')}
                         onClick={() => settle(true)}
                     >
-                        {request.confirmLabel || '继续'}
+                        {shown.confirmLabel || '继续'}
                     </button>
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 }

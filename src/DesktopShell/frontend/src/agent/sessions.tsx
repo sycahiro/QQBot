@@ -228,7 +228,7 @@ export function Sessions({ ready }: { ready: boolean }) {
                         items.length >= limit && limit < 2000 && (
                             <button
                                 key="older"
-                                className="qq-refresh"
+                                className="btn"
                                 onClick={() => setLimit((value) => value + 200)}
                             >
                                 加载更早会话
@@ -241,7 +241,7 @@ export function Sessions({ ready }: { ready: boolean }) {
                         subtitle={current ? chatLabel(current).number : ''}
                         actions={
                             <button
-                                className="qq-refresh"
+                                className="btn"
                                 disabled={busy || !selected}
                                 onClick={() => void control(current?.status === 'running')}
                             >

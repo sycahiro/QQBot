@@ -1,22 +1,78 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bot, Save } from 'lucide-react';
-import type { EngineStatusCommand } from '../desktop';
+import { Eye, EyeOff, ExternalLink, KeyRound, Save, Trash2 } from 'lucide-react';
 import { Notice } from '../components/notice';
 
-const DEFAULT_STATUS_COMMAND: EngineStatusCommand = {
-    enabled: false,
-    swallow: false,
-    cooldownSeconds: 5,
-    trigger: '#sl',
-};
-
 export function EngineSettings({ ready }: { ready: boolean }) {
-    const [statusCommand, setStatusCommand] = useState<EngineStatusCommand>(DEFAULT_STATUS_COMMAND);
-    const [historySync, setHistorySync] = useState(false);
-    const [saved, setSaved] = useState('');
+    const [webuiBusy, setWebuiBusy] = useState(false);
     const [notice, setNotice] = useState(''),
-        [error, setError] = useState(''),
-        [busy, setBusy] = useState(false);
+        [error, setError] = useState('');
+    const openWebui = async () => {
+        setWebuiBusy(true);
+        setError('');
+        setNotice('');
+        try {
+            const result = await window.pywebview!.api.open_snowluma_webui();
+            if (result.ok) setNotice('已在系统浏览器打开 SnowLuma 控制台。');
+            else setError(result.error.message);
+        } catch {
+            setError('打开 WebUI 未完成，请重试');
+        } finally {
+            setWebuiBusy(false);
+        }
+    };
+    return (
+        <div className="desktop-sections">
+            <Notice
+                message={error || notice}
+                error={Boolean(error)}
+                onClose={() => {
+                    setNotice('');
+                    setError('');
+                }}
+            />
+            <section className="ui-card console-panel">
+                <div className="console-panel-heading">
+                    <div>
+                        <h2>SnowLuma WebUI</h2>
+                        <p>
+                            引擎自带的控制台。模型接入、记忆、扩展、引擎更新等一切引擎事务都在它自己的
+                            WebUI 里完成，本应用只负责启动与连接，不代管引擎配置。
+                        </p>
+                    </div>
+                    <ExternalLink size={18} />
+                </div>
+                <div className="webui-access">
+                    <div className="webui-access-main">
+                        <button
+                            className="btn btn-primary"
+                            disabled={webuiBusy || !ready}
+                            onClick={() => void openWebui()}
+                        >
+                            <ExternalLink size={14} />
+                            {webuiBusy ? '正在打开…' : '打开 WebUI'}
+                        </button>
+                        <code className="webui-url">http://127.0.0.1:5099</code>
+                    </div>
+                    <small className="webui-hint">
+                        登录密码以你在 WebUI 里设置的为准；懒得记就存到下面的密码备忘。
+                    </small>
+                </div>
+            </section>
+            <PasswordMemo />
+        </div>
+    );
+}
+
+/** 手动保存的密码备忘（SnowLuma 控制台密码），仅存本机。 */
+function PasswordMemo() {
+    const [saved, setSaved] = useState<string | null>(null);
+    const [draft, setDraft] = useState('');
+    const [editing, setEditing] = useState(false);
+    const [revealed, setRevealed] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [error, setError] = useState('');
+    const [notice, setNotice] = useState('');
     const mounted = useRef(true);
     useEffect(() => {
         mounted.current = true;
@@ -24,36 +80,33 @@ export function EngineSettings({ ready }: { ready: boolean }) {
             mounted.current = false;
         };
     }, []);
-    useEffect(() => {
-        if (!ready) return;
-        void window
-            .pywebview!.api.get_engine_settings()
-            .then((result) => {
-                if (!mounted.current) return;
-                if (result.ok) {
-                    if (result.statusCommand) setStatusCommand(result.statusCommand);
-                    setHistorySync(Boolean(result.historySync?.enabled));
-                    setError('');
-                } else setError(result.error.message);
-            })
-            .catch(() => {
-                if (mounted.current) setError('引擎设置读取失败，请重试');
-            });
-    }, [ready]);
-    const save = async () => {
-        setBusy(true);
-        setNotice('');
-        setError('');
-        setSaved('');
+    const load = async () => {
         try {
-            const result = await window.pywebview!.api.save_engine_settings(statusCommand, {
-                enabled: historySync,
-            });
+            const result = await window.pywebview!.api.get_webui_password_memo();
+            if (!mounted.current) return;
+            if (result.ok) setSaved(result.password);
+            else setError(result.error.message);
+        } catch {
+            if (mounted.current) setError('密码备忘暂时无法读取');
+        }
+    };
+    useEffect(() => {
+        void load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+    const save = async (value: string) => {
+        setBusy(true);
+        setError('');
+        setNotice('');
+        try {
+            const result = await window.pywebview!.api.save_webui_password_memo(value);
             if (!mounted.current) return;
             if (result.ok) {
-                setStatusCommand(result.statusCommand);
-                setHistorySync(result.historySync.enabled);
-                setSaved('已保存。重启 SnowLuma 或重新连接账号后生效。');
+                setSaved(result.password);
+                setEditing(false);
+                setRevealed(false);
+                setDraft('');
+                setNotice(value ? '密码已保存到本机。' : '已清除保存的密码。');
             } else setError(result.error.message);
         } catch {
             if (mounted.current) setError('保存未完成，请重试');
@@ -61,109 +114,115 @@ export function EngineSettings({ ready }: { ready: boolean }) {
             if (mounted.current) setBusy(false);
         }
     };
+    const copy = async () => {
+        if (!saved) return;
+        try {
+            await navigator.clipboard.writeText(saved);
+            setCopied(true);
+            window.setTimeout(() => {
+                if (mounted.current) setCopied(false);
+            }, 2000);
+        } catch {
+            if (mounted.current) setError('复制失败，请显示密码后手动复制');
+        }
+    };
     return (
-        <div className="desktop-sections">
-            <Notice
-                message={error || saved || notice}
-                error={Boolean(error)}
-                onClose={() => {
-                    setNotice('');
-                    setError('');
-                    setSaved('');
-                }}
-            />
-            <section className="ui-card console-panel">
-                <div className="console-panel-heading">
-                    <div>
-                        <h2>#sl 状态命令</h2>
-                        <p>在群里或私聊发送触发词，引擎直接回复运行状态，不经过模型。</p>
-                    </div>
-                    <Bot size={18} />
+        <section className="ui-card console-panel password-memo">
+            <div className="console-panel-heading">
+                <div>
+                    <h2>密码备忘</h2>
+                    <p>
+                        手动保存 SnowLuma 控制台的登录密码，仅存放在本机
+                        runtime/secrets，不会上传；应用不会代读或代改引擎凭据。
+                    </p>
                 </div>
-                <div className="bot-form-grid">
-                    <label className="form-wide form-check">
-                        <input
-                            type="checkbox"
-                            checked={statusCommand.enabled}
-                            onChange={(e) =>
-                                setStatusCommand({ ...statusCommand, enabled: e.target.checked })
-                            }
-                        />
-                        启用状态命令
-                    </label>
-                    <label className="form-wide form-check">
-                        <input
-                            type="checkbox"
-                            checked={statusCommand.swallow}
-                            disabled={!statusCommand.enabled}
-                            onChange={(e) =>
-                                setStatusCommand({ ...statusCommand, swallow: e.target.checked })
-                            }
-                        />
-                        只回状态，不把这条消息转给机器人
-                    </label>
-                    <label className="form-wide">
-                        触发词
-                        <input
-                            maxLength={32}
-                            value={statusCommand.trigger}
-                            disabled={!statusCommand.enabled}
-                            onChange={(e) =>
-                                setStatusCommand({ ...statusCommand, trigger: e.target.value })
-                            }
-                            placeholder="#sl"
-                        />
-                        <small>整条消息精确匹配（忽略大小写），1 到 32 个字符。</small>
-                    </label>
-                    <label className="form-wide">
-                        每个会话的回复冷却（秒）
-                        <input
-                            type="number"
-                            min={0}
-                            max={3600}
-                            value={statusCommand.cooldownSeconds}
-                            disabled={!statusCommand.enabled}
-                            onChange={(e) =>
-                                setStatusCommand({
-                                    ...statusCommand,
-                                    cooldownSeconds: Number(e.target.value),
-                                })
-                            }
-                        />
-                        <small>0 表示不冷却；同一群或私聊在冷却期内不重复回复。</small>
-                    </label>
-                </div>
-            </section>
-            <section className="ui-card console-panel">
-                <div className="console-panel-heading">
-                    <div>
-                        <h2>登录历史回填</h2>
-                        <p>账号接入时静默拉取近一段聊天记录，供机器人更快了解上下文。</p>
-                    </div>
-                    <Bot size={18} />
-                </div>
-                <div className="bot-form-grid">
-                    <label className="form-wide form-check">
-                        <input
-                            type="checkbox"
-                            checked={historySync}
-                            onChange={(e) => setHistorySync(e.target.checked)}
-                        />
-                        登录时回填历史消息
-                    </label>
-                </div>
-                <div className="card-save-footer save-actions">
+                <KeyRound size={18} />
+            </div>
+            {saved && !editing ? (
+                <div className="memo-secret">
+                    <code className="memo-secret-value">
+                        {revealed ? saved : '•'.repeat(Math.min(saved.length, 20))}
+                    </code>
                     <button
-                        className="qq-refresh primary-button"
-                        disabled={busy || !ready}
-                        onClick={() => void save()}
+                        className="btn btn-sm memo-action"
+                        onClick={() => setRevealed((value) => !value)}
+                    >
+                        {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
+                        {revealed ? '隐藏' : '显示'}
+                    </button>
+                    <button className="btn btn-sm memo-action" onClick={() => void copy()}>
+                        {copied ? '已复制' : '复制'}
+                    </button>
+                    <button
+                        className="btn btn-sm memo-action"
+                        onClick={() => {
+                            setEditing(true);
+                            setDraft(saved);
+                            setNotice('');
+                        }}
+                    >
+                        修改
+                    </button>
+                </div>
+            ) : (
+                <div className="memo-edit">
+                    <input
+                        type={revealed ? 'text' : 'password'}
+                        value={draft}
+                        placeholder={saved ? '输入新的密码' : '输入要保存的密码'}
+                        maxLength={200}
+                        disabled={busy}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && draft.trim()) void save(draft);
+                        }}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-icon memo-reveal"
+                        aria-label={revealed ? '隐藏密码' : '显示密码'}
+                        onClick={() => setRevealed((value) => !value)}
+                    >
+                        {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                    <button
+                        className="btn btn-primary btn-sm memo-action"
+                        disabled={busy || !draft.trim()}
+                        onClick={() => void save(draft)}
                     >
                         <Save size={14} />
                         保存
                     </button>
-                    <small>改动保存后写入引擎配置文件（data/services/snowluma/config）。</small>
+                    {editing && (
+                        <button
+                            className="btn btn-sm memo-action"
+                            disabled={busy}
+                            onClick={() => {
+                                setEditing(false);
+                                setDraft('');
+                            }}
+                        >
+                            取消
+                        </button>
+                    )}
                 </div>
-            </section>
-        </div>
+            )}
+            {saved && !editing && (
+                <button
+                    className="btn btn-sm memo-clear"
+                    disabled={busy}
+                    onClick={() => void save('')}
+                >
+                    <Trash2 size={13} />
+                    清除保存的密码
+                </button>
+            )}
+            {error && (
+                <p className="desktop-error" role="alert">
+                    {error}
+                </p>
+            )}
+            {notice && !error && <p className="action-notice">{notice}</p>}
+        </section>
     );
 }

@@ -1,12 +1,9 @@
-import base64
 import json
 import threading
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 from qqbot.desktop.bridge import DesktopBridge
-from qqbot.desktop.debug_files import DebugFiles
 from qqbot.desktop.diagnostics import read_log_entries
 from qqbot.desktop.paths import DesktopPaths
 from qqbot.desktop.resident import Residence
@@ -55,29 +52,6 @@ def test_single_instance_owns_runtime_specific_focus_channel(tmp_path):
         duplicate.close()
         second.close()
         first.close()
-
-
-def test_locked_attachment_does_not_block_other_cleanup_or_new_staging(tmp_path, monkeypatch):
-    files = DebugFiles(tmp_path)
-    first = files.stage("12345678", "file", "one", base64.b64encode(b"first").decode())
-    second = files.stage("12345678", "file", "two", base64.b64encode(b"second").decode())
-    locked = files._items[first["token"]]["path"]
-    original = Path.unlink
-
-    def unlink(path, *args, **kwargs):
-        if path == locked:
-            raise PermissionError("synthetic lock")
-        return original(path, *args, **kwargs)
-
-    with monkeypatch.context() as patch:
-        patch.setattr(Path, "unlink", unlink)
-        files.clear()
-        assert not files.valid("12345678", [first["token"]])
-        assert second["token"] not in files._items
-        third = files.stage("12345678", "file", "three", base64.b64encode(b"third").decode())
-        assert files.valid("12345678", [third["token"]])
-        files.close()
-    locked.unlink()
 
 
 @pytest.mark.parametrize(

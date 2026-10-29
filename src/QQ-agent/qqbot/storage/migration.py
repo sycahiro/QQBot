@@ -209,7 +209,7 @@ def import_snapshot(database, data, account, source_id):
                                 )
 
                         done("messages", identity, digest, put)
-                    except ValueError, TypeError, KeyError:
+                    except (ValueError, TypeError, KeyError):
                         report["skipped"].append(
                             {
                                 "file": path,
@@ -341,7 +341,7 @@ def import_snapshot(database, data, account, source_id):
                                 account, key, user, str(raw.get("name") or "")[:256], text
                             ),
                         )
-                    except ValueError, TypeError, AttributeError:
+                    except (ValueError, TypeError, AttributeError):
                         report["skipped"].append(
                             {
                                 "file": path,
@@ -353,7 +353,7 @@ def import_snapshot(database, data, account, source_id):
                 report["skipped"].append(
                     {"file": path, "reason": "不是当前成员记忆格式，未自动转换"}
                 )
-        except ValueError, TypeError, KeyError:
+        except (ValueError, TypeError, KeyError):
             report["skipped"].append(
                 {"file": path, "reason": "文件结构或字段校验失败，原数据未改动"}
             )

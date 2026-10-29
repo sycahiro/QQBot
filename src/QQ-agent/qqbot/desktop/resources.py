@@ -50,12 +50,12 @@ class ResourceMonitor:
             app_memory = 0
             try:
                 children = self._process.children(recursive=True)
-            except psutil.NoSuchProcess, psutil.AccessDenied:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 children = []
             for process in [self._process, *children]:
                 try:
                     app_memory += process.memory_info().rss
-                except psutil.NoSuchProcess, psutil.AccessDenied:
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
                     # A renderer may exit between discovery and the memory read.
                     continue
             self._cached = {

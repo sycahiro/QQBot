@@ -193,7 +193,7 @@ class Residence:
                     data = {key: value for key, value in data.items() if key != "closeToTray"}
                 self._validate(data)
                 self._options = data
-            except OSError, ValueError, TypeError:
+            except (OSError, ValueError, TypeError):
                 logging.exception(
                     "桌面驻留设置损坏或无法读取，使用默认设置；原文件保留：%s", self._file
                 )

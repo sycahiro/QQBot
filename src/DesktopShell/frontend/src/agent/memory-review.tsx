@@ -1,9 +1,8 @@
-import { uiTransition } from '../motion';
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Sparkles, Check, X } from 'lucide-react';
 import type { MemoryPreview, MemoryMember } from '../business';
 import { Notice } from '../components/notice';
+import { Collapse } from '../components/presence';
 
 export function MemoryReview({
     account,
@@ -24,7 +23,6 @@ export function MemoryReview({
         [error, setError] = useState('');
     const alive = useRef(true),
         working = useRef(false);
-    const reduced = useReducedMotion();
     useEffect(() => {
         alive.current = true;
         return () => {
@@ -86,71 +84,63 @@ export function MemoryReview({
     };
     return (
         <div className="memory-review">
-            <button
-                className="qq-refresh"
-                disabled={disabled || busy}
-                onClick={() => void generate()}
-            >
+            <button className="btn" disabled={disabled || busy} onClick={() => void generate()}>
                 <Sparkles size={14} />
                 {busy ? '正在处理…' : '整理预览'}
             </button>
             <p className="action-notice">让模型整理该成员的记忆，检查结果后确认应用。</p>
             <Notice title="记忆整理" message={error} error onClose={() => setError('')} />
-            <AnimatePresence initial={false}>
-                {preview && (
-                    <motion.div
-                        className="memory-review-content"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={uiTransition(reduced)}
-                    >
-                        <div className="memory-review-heading">
-                            <h4>整理结果预览</h4>
-                            <small>
-                                {preview.model} · {preview.tokens.toLocaleString()} Token · 参考{' '}
-                                {preview.sourceCount} 条发言 · {Math.ceil(preview.expiresIn / 60)}{' '}
-                                分钟内有效
-                            </small>
-                        </div>
-                        <div className="memory-review-grid">
-                            <div>
-                                <h4>修改前 · {preview.before.length} 条</h4>
-                                {preview.before.map((value, i) => (
-                                    <p key={i}>{value}</p>
-                                ))}
+            <Collapse open={Boolean(preview)}>
+                <div className="memory-review-content">
+                    {preview && (
+                        <>
+                            <div className="memory-review-heading">
+                                <h4>整理结果预览</h4>
+                                <small>
+                                    {preview.model} · {preview.tokens.toLocaleString()} Token · 参考{' '}
+                                    {preview.sourceCount} 条发言 ·{' '}
+                                    {Math.ceil(preview.expiresIn / 60)} 分钟内有效
+                                </small>
                             </div>
-                            <label>
-                                修改后（可编辑，每行一条）
-                                <textarea
-                                    rows={6}
-                                    value={text}
+                            <div className="memory-review-grid">
+                                <div>
+                                    <h4>修改前 · {preview.before.length} 条</h4>
+                                    {preview.before.map((value, i) => (
+                                        <p key={i}>{value}</p>
+                                    ))}
+                                </div>
+                                <label>
+                                    修改后（可编辑，每行一条）
+                                    <textarea
+                                        rows={6}
+                                        value={text}
+                                        disabled={busy}
+                                        onChange={(e) => setText(e.target.value)}
+                                    />
+                                </label>
+                            </div>
+                            <div className="memory-save">
+                                <button
+                                    className="btn"
                                     disabled={busy}
-                                    onChange={(e) => setText(e.target.value)}
-                                />
-                            </label>
-                        </div>
-                        <div className="memory-save">
-                            <button
-                                className="qq-refresh"
-                                disabled={busy}
-                                onClick={() => setPreview(null)}
-                            >
-                                <X size={14} />
-                                放弃预览
-                            </button>
-                            <button
-                                className="qq-refresh primary-button"
-                                disabled={busy || disabled}
-                                onClick={() => void apply()}
-                            >
-                                <Check size={14} />
-                                确认应用
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                    onClick={() => setPreview(null)}
+                                >
+                                    <X size={14} />
+                                    放弃预览
+                                </button>
+                                <button
+                                    className="btn btn-primary"
+                                    disabled={busy || disabled}
+                                    onClick={() => void apply()}
+                                >
+                                    <Check size={14} />
+                                    确认应用
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </Collapse>
         </div>
     );
 }

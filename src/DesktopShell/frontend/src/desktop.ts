@@ -45,13 +45,6 @@ export interface DependencyInventory {
 }
 export type ConfigurationResult<T> = ApiResult<T & { account?: string; scope?: 'global' }>;
 
-export interface EngineStatusCommand {
-    enabled: boolean;
-    swallow: boolean;
-    cooldownSeconds: number;
-    trigger: string;
-}
-
 export interface DesktopOptions {
     trayEnabled: boolean;
     startup: boolean;
@@ -179,22 +172,11 @@ declare global {
                           error: { code: string; message: string };
                       }
                 >;
-                get_engine_settings(): Promise<
-                    ApiResult<{
-                        statusCommand: EngineStatusCommand | null;
-                        historySync: { enabled: boolean } | null;
-                        engineConfigured: boolean;
-                    }>
-                >;
-                save_engine_settings(
-                    statusCommand: EngineStatusCommand,
-                    historySync: { enabled: boolean },
-                ): Promise<
-                    ApiResult<{
-                        statusCommand: EngineStatusCommand;
-                        historySync: { enabled: boolean };
-                    }>
-                >;
+                open_snowluma_webui(): Promise<ApiResult<{ url: string; password: string | null }>>;
+                get_webui_password_memo(): Promise<ApiResult<{ password: string | null }>>;
+                save_webui_password_memo(
+                    password: string,
+                ): Promise<ApiResult<{ password: string | null }>>;
                 select_qq_account(
                     target: { pid: number; processKey: string; uin: string } | null,
                 ): Promise<QqSelectionResult>;
@@ -417,30 +399,8 @@ declare global {
                 get_dependencies(): Promise<ApiResult<DependencyInventory>>;
                 open_market_page(kind: 'plugin' | 'skill'): Promise<ApiResult<{ url: string }>>;
                 open_project_page(
-                    project: 'python' | 'node' | 'snowluma',
+                    project: 'python' | 'node' | 'snowluma' | 'author' | 'repo' | 'issues',
                 ): Promise<ApiResult<{ url: string }>>;
-                get_debug_catalog(
-                    account: string,
-                ): Promise<ApiResult<{ account: string; actions: DebugAction[] }>>;
-                get_debug_activity(
-                    account: string,
-                    after: number,
-                ): Promise<ApiResult<{ account: string; items: DebugEvent[]; cursor: number }>>;
-                run_debug_action(
-                    action: string,
-                    params: unknown,
-                    account: string,
-                ): Promise<ApiResult<{ account: string; result: unknown }>>;
-                stage_debug_file(
-                    kind: string,
-                    name: string,
-                    encoded: string,
-                    account: string,
-                ): Promise<ApiResult<{ account: string; attachment: DebugAttachment }>>;
-                discard_debug_file(
-                    token: string,
-                    account: string,
-                ): Promise<ApiResult<{ account: string }>>;
                 mark_ready(): Promise<{ ok: boolean }>;
             };
         };
@@ -477,31 +437,6 @@ export interface NetworkProbe {
     };
     count?: number;
     title?: string;
-}
-export interface DebugAction {
-    name: string;
-    summary?: string;
-    description?: string;
-    category?: string;
-    readOnly: boolean;
-    callable: boolean;
-    returns?: string;
-    params?: { name: string; description?: string; required?: boolean }[];
-    inputSchema?: Record<string, unknown>;
-}
-export interface DebugEvent {
-    id: number;
-    account: string;
-    kind: string;
-    time: number;
-    summary: string;
-    detail?: unknown;
-}
-export interface DebugAttachment {
-    token: string;
-    kind: string;
-    name: string;
-    bytes: number;
 }
 
 export function useAgentStatus(ready: boolean) {

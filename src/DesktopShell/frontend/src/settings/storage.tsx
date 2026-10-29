@@ -14,6 +14,36 @@ import {
 
 let cachedDraft: { maxMb: string; days: string; engineDays: string } | null = null;
 
+function segments(data: StorageOverview) {
+    return [
+        { label: '日志', value: data.totals.logsBytes, tone: 'tone-a' },
+        { label: '账号数据', value: data.totals.accountBytes, tone: 'tone-b' },
+        { label: '临时文件', value: data.totals.temporaryBytes, tone: 'tone-c' },
+        { label: 'SnowLuma 服务数据', value: data.totals.serviceBytes, tone: 'tone-d' },
+    ];
+}
+
+function StorageBar({ data }: { data: StorageOverview }) {
+    const items = segments(data);
+    const total = items.reduce((sum, item) => sum + item.value, 0);
+    return (
+        <div className="storage-bar" role="img" aria-label="存储占用占比">
+            {total > 0 &&
+                items.map(
+                    (item) =>
+                        item.value > 0 && (
+                            <span
+                                key={item.label}
+                                className={item.tone}
+                                style={{ flexGrow: item.value }}
+                                title={`${item.label} ${bytes(item.value)}`}
+                            />
+                        ),
+                )}
+        </div>
+    );
+}
+
 export function StorageSettings({ ready }: { ready: boolean }) {
     const confirm = useConfirm();
     const [data, setData] = useState<StorageOverview | null>(null);
@@ -162,7 +192,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                         <h2>存储概览</h2>
                         <p>查看日志、账号、临时文件和 SnowLuma 服务数据的已统计占用。</p>
                     </div>
-                    <button className="qq-refresh" disabled={busy} onClick={() => void load()}>
+                    <button className="btn" disabled={busy} onClick={() => void load()}>
                         <RefreshCw size={15} />
                         {busy ? '正在处理…' : '刷新'}
                     </button>
@@ -183,16 +213,15 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 {bytes(data.totals.managedBytes)}
                             </strong>
                         </div>
+                        <StorageBar data={data} />
                         <div className="storage-metrics">
-                            {[
-                                ['日志', data.totals.logsBytes],
-                                ['账号数据', data.totals.accountBytes],
-                                ['临时文件', data.totals.temporaryBytes],
-                                ['SnowLuma 服务数据', data.totals.serviceBytes],
-                            ].map(([label, value]) => (
-                                <div className="storage-metric" key={label}>
-                                    <small>{label}</small>
-                                    <strong>{bytes(Number(value))}</strong>
+                            {segments(data).map((segment) => (
+                                <div className="storage-metric" key={segment.label}>
+                                    <small>
+                                        <i className={'storage-dot ' + segment.tone} />
+                                        {segment.label}
+                                    </small>
+                                    <strong>{bytes(segment.value)}</strong>
                                 </div>
                             ))}
                         </div>
@@ -274,7 +303,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                         </fieldset>
                         <div className="card-save-footer save-actions">
                             <button
-                                className="qq-refresh primary-button"
+                                className="btn btn-primary"
                                 disabled={busy || !changed}
                                 onClick={() => void save()}
                             >
@@ -307,7 +336,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 </p>
                             </div>
                             <button
-                                className="qq-refresh"
+                                className="btn"
                                 disabled={
                                     busy ||
                                     (!data.logs.closedLaunches && !data.logs.engineClosedFiles)
@@ -330,7 +359,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 <p>{bytes(data.totals.temporaryBytes)} · 调试附件与媒体解码文件</p>
                             </div>
                             <button
-                                className="qq-refresh"
+                                className="btn"
                                 disabled={busy || data.busy || !data.totals.temporaryBytes}
                                 onClick={() =>
                                     void cleanup(
@@ -385,7 +414,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                                         </small>
                                                     </div>
                                                     <button
-                                                        className="qq-refresh"
+                                                        className="btn"
                                                         aria-label={`清理 ${account.account} 的${category.label}`}
                                                         disabled={
                                                             busy ||
@@ -421,7 +450,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 <div className="storage-batch">
                                     {categories.map((category) => (
                                         <button
-                                            className="qq-refresh"
+                                            className="btn"
                                             key={category.id}
                                             disabled={busy || data.busy}
                                             onClick={() =>

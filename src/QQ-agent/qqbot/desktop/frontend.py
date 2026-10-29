@@ -65,7 +65,7 @@ class FrontendDocument:
                                 self.process.kill()
                                 break
                             chunks.append(block)
-                    except OSError, ValueError:
+                    except (OSError, ValueError):
                         pass
 
                 reader = self._reader = threading.Thread(
@@ -88,7 +88,7 @@ class FrontendDocument:
                     or len(html.encode()) > 1500000
                 ):
                     raise ValueError()
-            except ValueError, KeyError, TypeError:
+            except (ValueError, KeyError, TypeError):
                 raise RuntimeError(f"界面源码转换结果无效，请查看 {log_file}") from None
             self.html = _with_theme(html, theme)
             return self.html

@@ -1,6 +1,4 @@
-import { uiTransition } from '../motion';
 import { useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     MessageSquare,
     SlidersHorizontal,
@@ -21,6 +19,7 @@ import { Extensions } from './extensions';
 import { Stickers } from './stickers';
 import { ConnectionBoundary } from '../components/connection-boundary';
 import { useTabNavigation } from '../components/tab-navigation';
+import { useNavHighlight } from '../components/nav-highlight';
 import { Notice } from '../components/notice';
 
 const tabs = [
@@ -84,9 +83,8 @@ function ConnectedWorkspace({
     onStatus: (status: AgentStatus) => void;
     onError: (message: string) => void;
 }) {
-    const { tab, setTab, panel, minHeight, onExitComplete } =
-        useTabNavigation<(typeof tabs)[number]['id']>('sessions');
-    const reduced = useReducedMotion();
+    const { tab, setTab, panel } = useTabNavigation<(typeof tabs)[number]['id']>('sessions');
+    const { navRef, highlightRef } = useNavHighlight(tab);
     const [busy, setBusy] = useState(false);
     const change = async () => {
         const account = connection?.account?.uin || status?.account;
@@ -143,52 +141,37 @@ function ConnectedWorkspace({
                     自动回复
                 </button>
             </div>
-            <nav className="agent-tabs agent-workspace-tabs" aria-label="机器人功能">
+            <nav className="agent-tabs agent-workspace-tabs" aria-label="机器人功能" ref={navRef}>
+                <span className="agent-tab-highlight" ref={highlightRef} aria-hidden="true" />
                 {tabs.map(({ id, label, icon: Icon }) => (
                     <button
                         key={id}
                         aria-current={tab === id ? 'page' : undefined}
                         onClick={() => setTab(id)}
                     >
-                        {tab === id && (
-                            <motion.span
-                                className="agent-tab-highlight"
-                                layoutId="agent-tab"
-                                transition={uiTransition(reduced)}
-                            />
-                        )}
                         <Icon size={17} />
                         <span>{label}</span>
                     </button>
                 ))}
             </nav>
-            <div ref={panel} style={{ minHeight }} className="tab-panel-frame">
-                <AnimatePresence mode="wait" initial={false} onExitComplete={onExitComplete}>
-                    <motion.div
-                        className="desktop-sections agent-tab-panel"
-                        key={tab}
-                        initial={reduced ? false : { opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0, pointerEvents: 'auto' }}
-                        exit={{ opacity: 0, y: reduced ? 0 : -4, pointerEvents: 'none' }}
-                        transition={uiTransition(reduced)}
-                    >
-                        {tab === 'sessions' ? (
-                            <Sessions ready={ready} />
-                        ) : tab === 'archive' ? (
-                            <Archive ready={ready} />
-                        ) : tab === 'memory' ? (
-                            <Memory ready={ready} />
-                        ) : tab === 'stickers' ? (
-                            <Stickers ready={ready} account={connection.account!.uin} />
-                        ) : tab === 'usage' ? (
-                            <Usage ready={ready} />
-                        ) : tab === 'extensions' ? (
-                            <Extensions ready={ready} />
-                        ) : (
-                            <BotSettings ready={ready} account={connection.account!.uin} />
-                        )}
-                    </motion.div>
-                </AnimatePresence>
+            <div ref={panel} className="tab-panel-frame">
+                <div className="desktop-sections agent-tab-panel page-enter" key={tab}>
+                    {tab === 'sessions' ? (
+                        <Sessions ready={ready} />
+                    ) : tab === 'archive' ? (
+                        <Archive ready={ready} />
+                    ) : tab === 'memory' ? (
+                        <Memory ready={ready} />
+                    ) : tab === 'stickers' ? (
+                        <Stickers ready={ready} account={connection.account!.uin} />
+                    ) : tab === 'usage' ? (
+                        <Usage ready={ready} />
+                    ) : tab === 'extensions' ? (
+                        <Extensions ready={ready} />
+                    ) : (
+                        <BotSettings ready={ready} account={connection.account!.uin} />
+                    )}
+                </div>
             </div>
         </div>
     );

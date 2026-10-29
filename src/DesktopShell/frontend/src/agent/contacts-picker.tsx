@@ -60,7 +60,7 @@ export function ContactPicker({ editor }: { editor: SettingsEditor }) {
                     />
                     <button
                         type="button"
-                        className="qq-refresh"
+                        className="btn"
                         disabled={busy}
                         onClick={() => void load()}
                     >

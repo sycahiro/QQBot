@@ -42,7 +42,7 @@ def send(bridge, action, params, account):
     # Bound before walking nested nodes, so a hand-written JSON tree cannot recurse indefinitely.
     try:
         raw = json.dumps(message, ensure_ascii=False, allow_nan=False)
-    except ValueError, TypeError, RecursionError:
+    except (ValueError, TypeError, RecursionError):
         raise ValueError("消息片段格式无效") from None
     if len(raw.encode()) > 64000:
         raise ValueError("消息构建参数超过 64 KB")

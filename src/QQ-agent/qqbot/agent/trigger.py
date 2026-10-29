@@ -33,7 +33,7 @@ def should_trigger(item, account, config, is_own_message):
     if isinstance(segments, str):
         try:
             segments = json.loads(segments)
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             pass
     text = []
     if isinstance(segments, list):

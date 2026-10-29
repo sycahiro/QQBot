@@ -48,7 +48,9 @@ export function About({ info }: { info: DesktopInfo | null }) {
     const [inventory, setInventory] = useState<DependencyInventory | null>(null);
     const [failed, setFailed] = useState(false);
     const [linkError, setLinkError] = useState('');
-    const openProject = async (project: 'python' | 'node' | 'snowluma') => {
+    const openProject = async (
+        project: 'python' | 'node' | 'snowluma' | 'author' | 'repo' | 'issues',
+    ) => {
         try {
             const result = await window.pywebview!.api.open_project_page(project);
             if (!result.ok) setLinkError(result.error.message);
@@ -101,6 +103,51 @@ export function About({ info }: { info: DesktopInfo | null }) {
                 <p className="about-intro">
                     设置与记录保存在本机；使用模型或联网搜索时，相关请求会发送到您配置的服务。
                 </p>
+            </section>
+            <section className="ui-card console-panel">
+                <div className="console-panel-heading">
+                    <div>
+                        <h2>作者</h2>
+                        <p>设计与开发</p>
+                    </div>
+                    <Code2 size={18} />
+                </div>
+                <div className="about-runtime-card">
+                    <div>
+                        <strong>jiuyv</strong>
+                        <span>QQBot 作者与维护者</span>
+                    </div>
+                    <p>
+                        有人在用、有人愿意折腾，这个小项目就有意义。遇到问题或想改进它，
+                        欢迎到仓库提 Issue 和 PR。
+                    </p>
+                    <div className="about-links">
+                        <button
+                            className="about-official-link"
+                            type="button"
+                            onClick={() => void openProject('author')}
+                            aria-label="打开作者的 GitHub 主页"
+                        >
+                            GitHub 主页 <ExternalLink size={12} />
+                        </button>
+                        <button
+                            className="about-official-link"
+                            type="button"
+                            onClick={() => void openProject('repo')}
+                            aria-label="打开本项目仓库"
+                        >
+                            项目仓库 <ExternalLink size={12} />
+                        </button>
+                        <button
+                            className="about-official-link"
+                            type="button"
+                            onClick={() => void openProject('issues')}
+                            aria-label="打开问题反馈页"
+                        >
+                            问题反馈 <ExternalLink size={12} />
+                        </button>
+                    </div>
+                </div>
             </section>
             <section className="ui-card console-panel">
                 <div className="console-panel-heading">

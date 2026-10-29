@@ -16,13 +16,13 @@ def test_watchdog_recovers_after_prune_and_window_errors_without_losing_focus_re
             iterations.append(delay)
             return len(iterations) > 2
 
-    class Files:
+    class Storage:
         count = 0
 
-        def prune(self):
+        def sweep(self):
             self.count += 1
             if self.count == 1:
-                raise OSError("temporary prune error")
+                raise OSError("temporary sweep error")
 
     class Window:
         count = 0
@@ -36,16 +36,16 @@ def test_watchdog_recovers_after_prune_and_window_errors_without_losing_focus_re
         def show(self):
             calls.append("show")
 
-    files = Files()
+    storage = Storage()
     window = Window()
     _watch_window(
         SimpleNamespace(runtime=tmp_path),
         window,
-        SimpleNamespace(_debug_files=files, _storage=SimpleNamespace(sweep=lambda: None)),
+        SimpleNamespace(_storage=storage),
         Stop(),
     )
     assert (
-        files.count == 2
+        storage.count == 2
         and window.count == 2
         and calls == ["restore", "show"]
         and not file.exists()

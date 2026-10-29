@@ -1,8 +1,7 @@
-import { uiTransition } from '../motion';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Check, ChevronDown, Search } from 'lucide-react';
+import { usePresence } from './presence';
 
 type Option = { value: string; label: string };
 type Props = {
@@ -32,7 +31,6 @@ export function Select({
     const anchor = useRef<HTMLDivElement>(null),
         popup = useRef<HTMLDivElement>(null);
     const control = useRef<HTMLInputElement | HTMLButtonElement | null>(null);
-    const reduced = useReducedMotion();
     const [open, setOpen] = useState(false),
         [query, setQuery] = useState(''),
         [active, setActive] = useState(-1);
@@ -47,6 +45,7 @@ export function Select({
         option.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
     );
     const activeIndex = active >= 0 && active < filtered.length ? active : -1;
+    const { mounted, leaving } = usePresence(open && !disabled);
 
     const show = () => {
         if (disabled) return;
@@ -224,84 +223,64 @@ export function Select({
                     }
                 }}
             >
-                <motion.span
-                    animate={{ rotate: open ? 180 : 0 }}
-                    transition={uiTransition(reduced)}
-                >
+                <span className={'ui-select-chevron' + (open ? ' is-open' : '')}>
                     <ChevronDown size={16} />
-                </motion.span>
+                </span>
             </button>
             {typeof document !== 'undefined' &&
+                mounted &&
                 createPortal(
-                    <AnimatePresence>
-                        {open && !disabled && (
-                            <motion.div
-                                ref={popup}
-                                className="ui-select-popup"
-                                style={{
-                                    position: 'fixed',
-                                    left: position.left,
-                                    width: position.width,
-                                    maxHeight: position.maxHeight,
-                                    ...(position.above
-                                        ? { bottom: position.top }
-                                        : { top: position.top }),
-                                    transformOrigin: position.above ? 'bottom' : 'top',
-                                }}
-                                initial={{
-                                    opacity: 0,
-                                    y: reduced ? 0 : position.above ? 5 : -5,
-                                    scale: reduced ? 1 : 0.98,
-                                }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{
-                                    opacity: 0,
-                                    y: reduced ? 0 : position.above ? 4 : -4,
-                                    scale: reduced ? 1 : 0.985,
-                                }}
-                                transition={uiTransition(reduced)}
-                            >
-                                {editable && (
-                                    <div className="ui-select-hint">
-                                        <Search size={13} />
-                                        <span>输入搜索，也可直接使用输入的值</span>
-                                    </div>
-                                )}
-                                <div
-                                    id={listId}
-                                    role="listbox"
-                                    aria-label={label}
-                                    className="ui-select-options"
-                                >
-                                    {filtered.map((option, index) => (
-                                        <div
-                                            key={option.value}
-                                            id={`${id}-${index}`}
-                                            role="option"
-                                            aria-selected={option.value === value}
-                                            data-index={index}
-                                            data-active={index === activeIndex || undefined}
-                                            className="ui-select-option"
-
-                                            onPointerMove={() => setActive(index)}
-                                            onMouseDown={(event) => event.preventDefault()}
-                                            onClick={() => choose(option)}
-                                        >
-                                            <span>{option.label}</span>
-                                            {option.value === value && <Check size={15} />}
-                                        </div>
-                                    ))}
-                                </div>
-                                {!filtered.length && (
-                                    <p className="ui-select-empty" role="status">
-                                        {query && options.length
-                                            ? '没有匹配选项，可直接使用输入的值'
-                                            : emptyText}
-                                    </p>
-                                )}
-                            </motion.div>
+                    <div
+                        ref={popup}
+                        className={'ui-select-popup' + (leaving ? ' is-leaving' : '')}
+                        data-origin={position.above ? 'bottom' : 'top'}
+                        style={{
+                            position: 'fixed',
+                            left: position.left,
+                            width: position.width,
+                            maxHeight: position.maxHeight,
+                            ...(position.above ? { bottom: position.top } : { top: position.top }),
+                        }}
+                    >
+                        {editable && (
+                            <div className="ui-select-hint">
+                                <Search size={13} />
+                                <span>输入搜索，也可直接使用输入的值</span>
+                            </div>
                         )}
-                    </AnimatePresence>,
+                        <div
+                            id={listId}
+                            role="listbox"
+                            aria-label={label}
+                            className="ui-select-options"
+                        >
+                            {filtered.map((option, index) => (
+                                <div
+                                    key={option.value}
+                                    id={`${id}-${index}`}
+                                    role="option"
+                                    aria-selected={option.value === value}
+                                    data-index={index}
+                                    data-active={index === activeIndex || undefined}
+                                    className="ui-select-option"
+
+                                    onPointerMove={() => setActive(index)}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={() => choose(option)}
+                                >
+                                    <span>{option.label}</span>
+                                    {option.value === value && <Check size={15} />}
+                                </div>
+                            ))}
+                        </div>
+                        {!filtered.length && (
+                            <p className="ui-select-empty" role="status">
+                                {query && options.length
+                                    ? '没有匹配选项，可直接使用输入的值'
+                                    : emptyText}
+                            </p>
+                        )}
+                    </div>,
                     document.body,
                 )}
         </div>

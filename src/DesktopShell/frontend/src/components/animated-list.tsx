@@ -1,8 +1,13 @@
-import { uiTransition } from '../motion';
-import { Children, useRef, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { Children, useEffect, useRef, useState, type ReactNode } from 'react';
+import { UI_MOTION } from '../motion';
 
-/** Animate keyed entries, not the polling response or the whole page. */
+const EXIT_MS = UI_MOTION.duration * 1000;
+
+/**
+ * Animate keyed entries, not the polling response or the whole page.
+ * New rows expand via CSS keyframes; removed rows stay as ghosts for one
+ * motion cycle so the browser can animate their collapse.
+ */
 export function AnimatedList({
     children,
     className,
@@ -12,77 +17,83 @@ export function AnimatedList({
     className?: string;
     staged?: boolean;
 }) {
-    const reduced = useReducedMotion();
     const entries = Children.toArray(children);
-    const firstKeys = useRef<Set<string | number> | null>(null);
-    const getKey = (child: (typeof entries)[number]) =>
-        typeof child === 'object' && 'key' in child ? (child.key ?? String(child)) : String(child);
+    const getKey = (child: (typeof entries)[number]): string =>
+        typeof child === 'object' && 'key' in child ? String(child.key ?? child) : String(child);
+    const firstKeys = useRef<Set<string> | null>(null);
     if (entries.length && firstKeys.current === null)
         firstKeys.current = new Set(entries.map(getKey));
+    const [ghosts, setGhosts] = useState<{ key: string; node: ReactNode }[]>([]);
+    const lastEntries = useRef<Map<string, ReactNode>>(new Map());
+    const timers = useRef(new Map<string, number>());
+    const signature = entries.map(getKey).join('\u0000');
+    useEffect(() => {
+        const current = new Map(entries.map((child) => [getKey(child), child] as const));
+        const previous = lastEntries.current;
+        lastEntries.current = current;
+        setGhosts((list) => {
+            const kept = list.filter((ghost) => current.has(ghost.key));
+            return kept.length === list.length ? list : kept;
+        });
+        for (const [key, node] of previous) {
+            if (current.has(key) || timers.current.has(key)) continue;
+            setGhosts((list) => [...list, { key, node }]);
+            timers.current.set(
+                key,
+                window.setTimeout(() => {
+                    timers.current.delete(key);
+                    setGhosts((list) => list.filter((ghost) => ghost.key !== key));
+                }, EXIT_MS),
+            );
+        }
+    }, [signature]);
+    useEffect(
+        () => () => {
+            for (const timer of timers.current.values()) window.clearTimeout(timer);
+        },
+        [],
+    );
+    const initial = firstKeys.current;
     return (
-        <motion.div
-            className={className}
-            initial={staged && !reduced ? { opacity: 0, x: 28 } : false}
-            animate={
-                staged && !entries.length
-                    ? { opacity: 0, x: reduced ? 0 : 28 }
-                    : { opacity: 1, x: 0 }
+        <div
+            className={
+                'animated-list' +
+                (className ? ' ' + className : '') +
+                (staged ? ' is-staged' : '') +
+                (staged && !entries.length ? ' is-empty' : '')
             }
-            transition={uiTransition(reduced)}
         >
-            <AnimatePresence>
-                {entries.map((child) => {
-                    const key =
-                        typeof child === 'object' && 'key' in child ? child.key : String(child);
-                    const initialBatch = firstKeys.current?.has(getKey(child));
-                    // Fractional rows avoid temporary height:auto measurements that
-                    // clamp a scroller before its removal animation can start.
-                    return (
-                        <motion.div
-                            key={key}
-                            className="animated-list-item"
-                            initial="hidden"
-                            animate="visible"
-                            exit="removed"
-                            variants={{
-                                hidden: {
-                                    gridTemplateRows: reduced || initialBatch ? '1fr' : '0fr',
-                                },
-                                visible: { gridTemplateRows: '1fr' },
-                                removed: {
-                                    gridTemplateRows: reduced ? '1fr' : '0fr',
-                                    transition: uiTransition(reduced),
-                                },
-                            }}
-                            transition={uiTransition(reduced)}
-                        >
-                            <div className="animated-list-clip">
-                                <motion.div
-                                    className="animated-list-content"
-                                    variants={{
-                                        hidden: {
-                                            opacity: initialBatch ? 1 : 0,
-                                            x: staged && !reduced && !initialBatch ? 28 : 0,
-                                        },
-                                        visible: {
-                                            opacity: 1,
-                                            x: 0,
-                                            transition: uiTransition(reduced),
-                                        },
-                                        removed: {
-                                            opacity: 0,
-                                            x: staged && !reduced ? 18 : 0,
-                                            transition: uiTransition(reduced),
-                                        },
-                                    }}
-                                >
-                                    {child}
-                                </motion.div>
+            {entries.map((child) => {
+                const key = getKey(child);
+                const initialBatch = initial?.has(key);
+                return (
+                    <div
+                        className="animated-list-item"
+                        key={key}
+                        data-static={initialBatch || undefined}
+                    >
+                        <div className="animated-list-clip">
+                            <div
+                                className="animated-list-content"
+                                data-slide={staged && !initialBatch ? '' : undefined}
+                            >
+                                {child}
                             </div>
-                        </motion.div>
-                    );
-                })}
-            </AnimatePresence>
-        </motion.div>
+                        </div>
+                    </div>
+                );
+            })}
+            {ghosts.map((ghost) => (
+                <div
+                    className="animated-list-item is-ghost"
+                    key={'ghost-' + String(ghost.key)}
+                    aria-hidden="true"
+                >
+                    <div className="animated-list-clip">
+                        <div className="animated-list-content">{ghost.node}</div>
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }

@@ -426,7 +426,7 @@ export function Archive({ ready }: { ready: boolean }) {
                 actions={
                     <button
                         type="button"
-                        className="qq-refresh"
+                        className="btn"
                         disabled={busy || !selected}
                         onClick={() => void process()}
                     >
@@ -444,7 +444,7 @@ export function Archive({ ready }: { ready: boolean }) {
                 </div>
                 <div className="archive-read-actions">
                     <button
-                        className="qq-refresh"
+                        className="btn"
                         aria-pressed={unreadOnly}
                         onClick={() => setUnreadOnly((value) => !value)}
                     >
@@ -452,7 +452,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         {unreadOnly ? '显示全部聊天' : '仅看未读'}
                     </button>
                     <button
-                        className="qq-refresh"
+                        className="btn"
                         disabled={busy || loadingOlder || !current?.unread}
                         onClick={() => void markRead(false)}
                     >
@@ -460,7 +460,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         当前聊天标记已读
                     </button>
                     <button
-                        className="qq-refresh"
+                        className="btn"
                         disabled={busy || loadingOlder || readState.unread === 0}
                         onClick={() => void markRead(true)}
                     >
@@ -556,12 +556,12 @@ export function Archive({ ready }: { ready: boolean }) {
                                     onChange={(event) => setDraftQuery(event.target.value)}
                                 />
                             </label>
-                            <button className="qq-refresh" type="submit">
+                            <button className="btn" type="submit">
                                 搜索
                             </button>
                             {(query || draftQuery) && (
                                 <button
-                                    className="qq-refresh"
+                                    className="btn"
                                     type="button"
                                     onClick={() => {
                                         setDraftQuery('');
@@ -584,7 +584,7 @@ export function Archive({ ready }: { ready: boolean }) {
                         <div className="archive-history-actions">
                             {before != null && itemsKey === selectionRef.current && (
                                 <button
-                                    className="qq-refresh"
+                                    className="btn"
                                     disabled={busy || loadingOlder}
                                     onClick={() => void older()}
                                 >
@@ -595,7 +595,7 @@ export function Archive({ ready }: { ready: boolean }) {
                             )}
                             {history && (
                                 <button
-                                    className="qq-refresh"
+                                    className="btn"
                                     onClick={() => {
                                         ++olderRequest.current;
                                         historyRef.current = false;

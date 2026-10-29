@@ -58,11 +58,38 @@
     color: color-mix(in oklab, var(--primary) 60%, var(--foreground));
     font-weight: 600;
 }
+.console-sidebar nav {
+    position: relative;
+}
 .console-nav-highlight {
     position: absolute;
-    inset: 0;
     border-radius: 9px;
     background: color-mix(in oklab, var(--primary) 10%, transparent);
+    transition: top var(--motion-duration) var(--motion-ease);
+}
+.console-nav-highlight:not([data-ready]) {
+    transition: none;
+}
+.page-enter {
+    animation: page-enter var(--motion-duration) var(--motion-ease) both;
+}
+@keyframes page-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .console-nav-highlight {
+        transition: none;
+    }
+    .page-enter {
+        animation: none;
+    }
 }
 .console-main-column {
     display: flex;

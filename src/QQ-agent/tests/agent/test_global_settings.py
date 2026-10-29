@@ -106,7 +106,6 @@ def test_global_checks_and_profile_edits_work_without_a_connected_account(tmp_pa
         assert "secret" not in json.dumps(bridge.get_global_settings())
     finally:
         bridge._reviews.close()
-        bridge._debug_files.close()
 
 
 def test_invalid_global_write_is_atomic_and_host_change_cannot_borrow_a_key(tmp_path):
@@ -183,4 +182,3 @@ def test_media_save_updates_only_active_profile_and_rejects_stale_profile(tmp_pa
         assert not (tmp_path / "accounts").exists()
     finally:
         bridge._reviews.close()
-        bridge._debug_files.close()

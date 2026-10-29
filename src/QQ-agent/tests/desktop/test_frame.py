@@ -39,7 +39,6 @@ def test_controls_are_explicit_and_close_uses_normal_window_lifecycle(tmp_path):
         assert not bridge.window_control("execute")["ok"]
     finally:
         bridge._reviews.close()
-        bridge._debug_files.close()
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows native frame")

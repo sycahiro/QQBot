@@ -236,7 +236,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                         />
                         <button
                             type="button"
-                            className="qq-refresh"
+                            className="btn"
                             disabled={busy}
                             onClick={() => importInput.current?.click()}
                         >
@@ -272,7 +272,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                         onChange={(e) => setQuery(e.target.value)}
                     />
                 </label>
-                <button className="qq-refresh" type="submit">
+                <button className="btn" type="submit">
                     搜索
                 </button>
             </form>
@@ -378,7 +378,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                             </div>
                             <div className="card-save-footer save-actions">
                                 <button
-                                    className="qq-refresh primary-button"
+                                    className="btn btn-primary"
                                     disabled={busy || !dirty}
                                     onClick={() => void save()}
                                 >

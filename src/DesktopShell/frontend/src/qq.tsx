@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
 import { QrCode, RefreshCw } from 'lucide-react';
-import { uiTransition } from './motion';
 import { Notice } from './components/notice';
 import { StatusSwap } from './components/status-swap';
 import type { QqProcess, QqConnectionInfo, QqDiscoveryResult } from './desktop';
@@ -49,7 +47,6 @@ export function QqAccounts({
     const [saving, setSaving] = useState(false);
     const [notice, setNotice] = useState('');
     const [serviceBusy, setServiceBusy] = useState(false);
-    const reduced = useReducedMotion();
     const savingNow = useRef(false);
     const mounted = useRef(true);
     const scannedRevision = useRef<number | null>(null);
@@ -234,7 +231,7 @@ export function QqAccounts({
                     </span>
                     {serviceStage === 'running' ? (
                         <button
-                            className="qq-refresh"
+                            className="btn"
                             disabled={!ready || serviceBusy}
                             onClick={() => void stopService()}
                         >
@@ -242,7 +239,7 @@ export function QqAccounts({
                         </button>
                     ) : (
                         <button
-                            className="qq-refresh qq-connect"
+                            className="btn btn-accent"
                             disabled={!ready || serviceBusy || serviceStage === 'starting'}
                             onClick={() => void startService()}
                         >
@@ -276,7 +273,7 @@ export function QqAccounts({
                                   : '准备检测'}
                     </span>
                     <button
-                        className="qq-refresh"
+                        className="btn"
                         disabled={!ready || loading || saving || serviceStage !== 'running'}
                         onClick={() => {
                             setNotice('');
@@ -346,7 +343,7 @@ export function QqAccounts({
                     />
                     {locked && (
                         <button
-                            className="qq-refresh"
+                            className="btn"
                             disabled={loading || saving || connectionBusy}
                             onClick={() => void changeConnection(null)}
                         >
@@ -361,18 +358,13 @@ export function QqAccounts({
                 )}
                 <Notice title="QQ Agent" message={notice} onClose={() => setNotice('')} />
                 {processes?.length === 0 && (
-                    <motion.div
-                        className="desktop-empty"
-                        initial={reduced ? false : { opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={uiTransition(reduced)}
-                    >
+                    <div className="desktop-empty page-enter">
                         <span className="empty-icon">
                             <QrCode size={28} />
                         </span>
                         <h3>未发现正在运行的 QQ</h3>
                         <p>先打开 Windows QQ 并登录账号，再点击刷新检测。</p>
-                    </motion.div>
+                    </div>
                 )}
                 {Boolean(processes?.length) && (
                     <div className="qq-process-list">
@@ -383,14 +375,14 @@ export function QqAccounts({
                             const connected = Boolean(current && connection?.connected);
                             const busyHere = current && connectionBusy;
                             return (
-                                <motion.article
-                                    className={'qq-process-row' + (connected ? ' is-selected' : '')}
+                                <article
+                                    className={
+                                        'qq-process-row page-enter' +
+                                        (connected ? ' is-selected' : '')
+                                    }
                                     key={item.pid}
-                                    initial={reduced ? false : { opacity: 0, x: 32 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{
-                                        ...uiTransition(reduced),
-                                        delay: reduced ? 0 : Math.min(index, 8) * 0.06,
+                                    style={{
+                                        animationDelay: `${Math.min(index, 8) * 0.06}s`,
                                     }}
                                 >
                                     <span className="qq-account-icon">
@@ -435,7 +427,7 @@ export function QqAccounts({
                                         <div className="qq-account-button">
                                             {!connected && (
                                                 <button
-                                                    className="qq-refresh qq-connect"
+                                                    className="btn btn-accent"
                                                     disabled={
                                                         loading ||
                                                         saving ||
@@ -450,7 +442,7 @@ export function QqAccounts({
                                             )}
                                         </div>
                                     </div>
-                                </motion.article>
+                                </article>
                             );
                         })}
                     </div>

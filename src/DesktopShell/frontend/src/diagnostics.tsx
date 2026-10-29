@@ -1,10 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Terminal } from 'lucide-react';
-import { useReducedMotion } from 'motion/react';
 import { scrollToY } from './motion';
 
 export function Logs({ ready }: { ready: boolean }) {
-    const reduced = useReducedMotion();
     const cancelScroll = useRef<(() => void) | null>(null);
     useEffect(() => () => cancelScroll.current?.(), []);
     const [lines, setLines] = useState<{ id: string; text: string }[]>([]);
@@ -103,11 +101,11 @@ export function Logs({ ready }: { ready: boolean }) {
                         setSearch(next);
                     }}
                 />
-                <button className="qq-refresh" onClick={() => setPaused((value) => !value)}>
+                <button className="btn" onClick={() => setPaused((value) => !value)}>
                     {paused ? '恢复刷新' : '暂停刷新'}
                 </button>
                 <button
-                    className="qq-refresh"
+                    className="btn"
                     disabled={atLatest}
                     onClick={() => {
                         following.current = true;
@@ -115,11 +113,7 @@ export function Logs({ ready }: { ready: boolean }) {
                         const element = viewport.current;
                         if (element) {
                             cancelScroll.current?.();
-                            cancelScroll.current = scrollToY(
-                                element,
-                                element.scrollHeight,
-                                reduced,
-                            );
+                            cancelScroll.current = scrollToY(element, element.scrollHeight);
                         }
                     }}
                 >
@@ -170,5 +164,3 @@ export function Logs({ ready }: { ready: boolean }) {
         </section>
     );
 }
-
-export { DebugTools as Diagnostics } from './debug-tools';

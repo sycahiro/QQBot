@@ -1,6 +1,4 @@
-import { uiTransition } from '../motion';
 import { useId, useState, type ReactNode } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 
 /** Keep the content clipped throughout opening/closing, and unfocusable when shut. */
@@ -17,7 +15,6 @@ export function Disclosure({
 }) {
     const [open, setOpen] = useState(defaultOpen);
     const id = useId();
-    const reduced = useReducedMotion();
     return (
         <div className={`ui-disclosure ${className}`}>
             <button
@@ -27,13 +24,9 @@ export function Disclosure({
                 aria-controls={id}
                 onClick={() => setOpen((value) => !value)}
             >
-                <motion.span
-                    className="disclosure-chevron"
-                    animate={{ rotate: open ? 180 : 0 }}
-                    transition={uiTransition(reduced)}
-                >
+                <span className={'disclosure-chevron' + (open ? ' is-open' : '')}>
                     <ChevronDown size={15} />
-                </motion.span>
+                </span>
                 <span>{title}</span>
             </button>
             <div

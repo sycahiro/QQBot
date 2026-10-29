@@ -15,7 +15,7 @@ class Appearance:
         with self._lock:
             try:
                 value = json.loads(self._file.read_text(encoding="utf-8")).get("theme")
-            except OSError, ValueError, AttributeError:
+            except (OSError, ValueError, AttributeError):
                 return "system"
             return value if value in ("light", "dark", "system") else "system"
 

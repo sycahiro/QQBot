@@ -30,25 +30,20 @@ export function RecordToolbar({
                 {actions}
                 <button
                     type="button"
-                    className="qq-refresh"
+                    className="btn"
                     disabled={remove.disabled}
                     onClick={remove.run}
                 >
                     <Trash2 size={14} />
                     {removeLabel || `删除当前${noun}`}
                 </button>
-                <button
-                    type="button"
-                    className="qq-refresh"
-                    disabled={clear.disabled}
-                    onClick={clear.run}
-                >
+                <button type="button" className="btn" disabled={clear.disabled} onClick={clear.run}>
                     <Trash2 size={14} />
                     清空全部{noun}
                 </button>
                 <button
                     type="button"
-                    className="qq-refresh"
+                    className="btn"
                     disabled={refresh.disabled}
                     onClick={refresh.run}
                 >

@@ -63,7 +63,7 @@ def test_actual_compile_process_never_listens_and_writes_no_dist(tmp_path):
                 for item in psutil.Process(child.pid).net_connections(kind="inet"):
                     if item.status == psutil.CONN_LISTEN:
                         found.append(item.laddr)
-            except psutil.NoSuchProcess, psutil.AccessDenied:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
     watcher = threading.Thread(target=sample, daemon=True)
@@ -92,7 +92,6 @@ def test_theme_is_local_validated_and_survives_reopen_without_browser_storage(tm
     assert bridge.save_theme("system")["ok"]
     assert json.loads((tmp_path / "appearance.json").read_text()) == {"theme": "system"}
     bridge._reviews.close()
-    bridge._debug_files.close()
 
 
 def test_main_passes_html_and_disables_framework_server(tmp_path, monkeypatch):

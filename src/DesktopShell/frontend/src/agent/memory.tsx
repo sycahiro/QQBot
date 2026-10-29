@@ -252,7 +252,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                         </div>
                                         {group && (
                                             <button
-                                                className="qq-refresh"
+                                                className="btn"
                                                 disabled={busy}
                                                 onClick={() => void remove(false, member)}
                                             >
@@ -283,7 +283,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                     </div>
                                     <div className="memory-save">
                                         <button
-                                            className="qq-refresh primary-button"
+                                            className="btn btn-primary"
                                             disabled={busy}
                                             onClick={() => void save(member)}
                                         >

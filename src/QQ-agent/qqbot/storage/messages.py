@@ -14,7 +14,7 @@ def stored_segments(raw):
     """Damaged attachment metadata must not hide an otherwise readable archive."""
     try:
         value = json.loads(raw)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return []
     return value if isinstance(value, (list, str)) else []
 

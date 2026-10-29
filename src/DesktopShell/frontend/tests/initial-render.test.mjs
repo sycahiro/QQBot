@@ -29,7 +29,7 @@ test('business pages render while the bridge and records are still loading', asy
             ['/src/residence.tsx', 'ResidenceSettings'],
             ['/src/settings/media.tsx', 'MediaSettings'],
             ['/src/diagnostics.tsx', 'Logs'],
-            ['/src/diagnostics.tsx', 'Diagnostics'],
+            ['/src/settings/engine.tsx', 'EngineSettings'],
             ['/src/qq.tsx', 'QqAccounts'],
         ];
         for (const [path, name] of pages) {
@@ -98,24 +98,6 @@ test('business pages render while the bridge and records are still loading', asy
             }),
         );
         assert.ok(online.includes('agent-tabs') && !online.includes('请先在「连接」页连接个人 QQ'));
-        const { DebugTools } = await server.ssrLoadModule('/src/debug-tools.tsx');
-        for (const state of ['idle', 'connecting', 'error']) {
-            const props = {
-                ready: true,
-                connection: { state, connected: false, account: { uin: '12345678', pid: 1 } },
-            };
-            const html = renderToStaticMarkup(React.createElement(DebugTools, props));
-            assert.ok(
-                html.includes(
-                    state === 'connecting' ? '正在连接个人 QQ' : '请先在「连接」页连接个人 QQ',
-                ),
-            );
-            assert.ok(
-                !html.includes('调试接口') &&
-                    !html.includes('执行接口') &&
-                    !html.includes('消息构建</button>'),
-            );
-        }
         const { ConnectionBoundary } = await server.ssrLoadModule(
             '/src/components/connection-boundary.tsx',
         );

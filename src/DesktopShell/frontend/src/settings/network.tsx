@@ -1,11 +1,10 @@
-import { uiTransition } from '../motion';
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Check, CircleAlert, FileText, Globe, Play, Save, Search } from 'lucide-react';
 import type { NetworkProbe } from '../desktop';
 import { useSettings } from '../agent/use-settings';
 import { Select } from '../components/select';
 import { Disclosure } from '../components/disclosure';
+import { Collapse } from '../components/presence';
 import { Notice } from '../components/notice';
 
 export function NetworkSettings({ ready }: { ready: boolean }) {
@@ -20,7 +19,6 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
     const mounted = useRef(true),
         working = useRef(false),
         revision = useRef(0);
-    const reduced = useReducedMotion();
     const config = state?.draft.config.webSearch;
     useEffect(() => {
         mounted.current = true;
@@ -154,7 +152,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                 </div>
                 <div className="card-save-footer save-actions">
                     <button
-                        className="qq-refresh primary-button"
+                        className="btn btn-primary"
                         disabled={Boolean(state.saving) || !editor.dirty('search')}
                         onClick={() => void save()}
                     >
@@ -206,7 +204,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                     <div className="form-wide model-check-actions">
                         <button
                             type="submit"
-                            className="qq-refresh"
+                            className="btn"
                             disabled={busy || !(kind === 'search' ? query : url).trim()}
                         >
                             <Play size={14} />
@@ -215,15 +213,11 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         {busy && <span className="action-notice">正在等待网站返回内容</span>}
                     </div>
                 </form>
-                <AnimatePresence mode="wait" initial={false}>
+                <Collapse open={Boolean(result)}>
                     {result && (
-                        <motion.div
+                        <div
                             key={`${result.kind}:${result.value}`}
-                            className="network-result"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={uiTransition(reduced)}
+                            className="network-result page-enter"
                         >
                             <div className="network-result-body">
                                 <div className="tool-heading">
@@ -249,7 +243,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                                         <small>{item.url}</small>
                                         <p>{item.snippet || '此结果没有摘要，可读取来源网页。'}</p>
                                         <button
-                                            className="qq-refresh"
+                                            className="btn"
                                             disabled={busy}
                                             onClick={() => {
                                                 setUrl(item.url);
@@ -325,9 +319,9 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                                     </Disclosure>
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     )}
-                </AnimatePresence>
+                </Collapse>
             </section>
         </div>
     );

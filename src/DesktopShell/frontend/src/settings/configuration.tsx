@@ -224,7 +224,7 @@ export function Configuration({
         <div className="card-save-footer save-actions">
             <button
                 type="button"
-                className="qq-refresh primary-button"
+                className="btn btn-primary"
                 disabled={
                     Boolean(state.saving) ||
                     ((section === 'model' || section === 'search') && Boolean(checking)) ||
@@ -376,7 +376,7 @@ export function Configuration({
                                 <div className="form-wide model-check-actions">
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={Boolean(state.saving)}
                                         onClick={() => pick(null)}
                                     >
@@ -385,7 +385,7 @@ export function Configuration({
                                     </button>
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={
                                             !profileId ||
                                             profileId === 'current' ||
@@ -473,7 +473,7 @@ export function Configuration({
                                         />
                                         <button
                                             type="button"
-                                            className="qq-refresh"
+                                            className="btn"
                                             disabled={!config.api.apiKeyConfigured && !clearKey}
                                             onClick={() => setClearKey(!clearKey)}
                                         >
@@ -485,7 +485,7 @@ export function Configuration({
                                 <div className="form-wide model-check-actions">
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={Boolean(checking) || !config.api.baseUrl}
                                         onClick={() => void check('list')}
                                     >
@@ -494,7 +494,7 @@ export function Configuration({
                                     </button>
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={
                                             Boolean(checking) ||
                                             !config.api.baseUrl ||
@@ -507,7 +507,7 @@ export function Configuration({
                                     </button>
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={
                                             Boolean(checking) ||
                                             !config.api.baseUrl ||
@@ -635,7 +635,7 @@ export function Configuration({
                                 <div className="form-wide">
                                     <button
                                         type="button"
-                                        className="qq-refresh"
+                                        className="btn"
                                         disabled={loadingPersona || Boolean(state.saving)}
                                         onClick={() => void applyDefaultPersona()}
                                     >

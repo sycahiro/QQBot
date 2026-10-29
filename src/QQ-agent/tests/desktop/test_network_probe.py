@@ -13,7 +13,6 @@ def bridge(tmp_path):
     b = DesktopBridge(DesktopPaths(tmp_path, tmp_path), lambda **_: None, global_settings=settings)
     yield b, settings, tmp_path
     b._reviews.close()
-    b._debug_files.close()
 
 
 def test_probe_uses_actual_query_and_returns_results_without_enabling_or_saving(bridge):

@@ -229,7 +229,6 @@ def test_bridge_rejects_stale_offline_and_invalid_scope_without_model_or_qq(tmp_
         assert bridge.mark_archive_read(KEY, snapshot["readThrough"], ACCOUNT)["marked"] == 1
         assert store.messages.messages(ACCOUNT, KEY)["items"][0]["text"] == "你好"
     finally:
-        bridge._debug_files.close()
         bridge._reviews.close()
         store.close()
 

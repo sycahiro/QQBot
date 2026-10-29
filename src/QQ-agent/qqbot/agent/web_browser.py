@@ -125,7 +125,7 @@ def resource_allowed(engine, target, url, kind, method, main_frame):
         # Search pages may keep their result container hidden until their
         # stylesheets have loaded. Blocking CSS changes page readiness.
         return kind in ("script", "stylesheet", "xhr", "fetch")
-    except ValueError, KeyError:
+    except (ValueError, KeyError):
         return False
 
 
@@ -199,7 +199,7 @@ class SearchBrowser:
                     address = await self._resolver(host)
                 ip = ipaddress.ip_address(address)
                 return (host, str(ip)) if ip.is_global else None
-            except ValueError, OSError, TimeoutError:
+            except (ValueError, OSError, TimeoutError):
                 return None
 
         resolved = dict(
@@ -419,7 +419,7 @@ class _PageNetwork:
                 await self.session.send(
                     "Fetch.failRequest", {"requestId": identifier, "errorReason": "BlockedByClient"}
                 )
-        except self.browser_error, TimeoutError:
+        except (self.browser_error, TimeoutError):
             pass
 
     def record_error(self, main, code, message):

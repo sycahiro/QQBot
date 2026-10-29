@@ -257,7 +257,7 @@ def extract_results(engine, html, limit, web_url):
                 link = base64.b64decode(
                     encoded[2:] + "=" * (-len(encoded[2:]) % 4), altchars=b"-_", validate=True
                 ).decode("utf-8")
-            except ValueError, UnicodeError:
+            except (ValueError, UnicodeError):
                 continue
         elif engine == "baidu":
             link = urljoin("https://www.baidu.com", link)

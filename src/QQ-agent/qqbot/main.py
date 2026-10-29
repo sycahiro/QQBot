@@ -15,7 +15,6 @@ from .agent.receiver import Receiver
 from .agent.service import AgentService
 from .desktop.appearance import Appearance
 from .desktop.bridge import DesktopBridge
-from .desktop.debug import Activity
 from .desktop.frame import WindowFrame
 from .desktop.frontend import FrontendDocument
 from .desktop.paths import DesktopPaths, save_state
@@ -52,7 +51,6 @@ def _watch_window(paths, window, bridge, stopped):
             try:
                 if operation == "prune":
                     if bridge:
-                        bridge._debug_files.prune()
                         bridge._storage.sweep()
                 elif focus.exists():
                     ticket = focus.read_bytes()
@@ -119,7 +117,6 @@ def run_primary(paths):
     discovery = SnowLumaDiscovery(paths)
     selection = AccountSelection(paths.runtime / "account.json")
     database = connection = agent = None
-    activity = Activity()
     stopped = threading.Event()
     window = None
     watcher = None
@@ -132,19 +129,13 @@ def run_primary(paths):
         sessions, memory = database.sessions, database.memory
         def connection_status(status):
             update(qqConnected=status["connected"])
-            activity.add((status.get("account") or {}).get("uin"), "connection", status["state"])
             if agent and not status["connected"]:
                 agent.pause()
             if bridge and not status["connected"]:
-                bridge._debug_files.clear()
                 bridge._reviews.invalidate()
 
         def receive_event(account, event):
-            item = receiver.receive(account, event)
-            if item:
-                activity.add(
-                    account, "message", f"{item['chatKey']} · {item['senderName']}: {item['text']}"
-                )
+            receiver.receive(account, event)
 
         connection = QqConnection(
             paths,
@@ -183,7 +174,6 @@ def run_primary(paths):
             agent,
             sessions,
             memory,
-            activity,
             stickers=database.stickers,
             residence=residence,
             global_settings=global_settings,
@@ -242,9 +232,7 @@ def run_primary(paths):
 
         resources = []
         if bridge:
-            resources.extend(
-                [("记忆预览", bridge._reviews.close), ("调试附件", bridge._debug_files.close)]
-            )
+            resources.extend([("记忆预览", bridge._reviews.close)])
         if residence:
             resources.append(("托盘", residence.close))
         if watcher:

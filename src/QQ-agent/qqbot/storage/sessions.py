@@ -18,7 +18,7 @@ USAGE_FIELDS = ("promptTokens", "completionTokens", "totalTokens", "calls")
 def stored_json(raw, expected):
     try:
         value = json.loads(raw)
-    except ValueError, TypeError:
+    except (ValueError, TypeError):
         return expected()
     return value if isinstance(value, expected) else expected()
 

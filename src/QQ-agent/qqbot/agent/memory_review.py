@@ -143,7 +143,7 @@ class MemoryReviews:
                 candidate = contents(parsed["memories"])
                 if any(any(ord(c) < 32 for c in text) for text in candidate):
                     raise ValueError()
-            except ValueError, TypeError:
+            except (ValueError, TypeError):
                 raise ModelError("整理模型返回格式无效；原记忆未改动，请手动调整") from None
             token = uuid.uuid4().hex
             with self._lock:

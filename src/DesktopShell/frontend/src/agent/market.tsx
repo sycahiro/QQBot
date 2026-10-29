@@ -1,19 +1,13 @@
-import { uiTransition } from '../motion';
 import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ArrowLeft, ExternalLink, Package, RefreshCw } from 'lucide-react';
 import type { MarketEntry } from '../business';
 import { AnimatedList } from '../components/animated-list';
 import { useTabNavigation } from '../components/tab-navigation';
+import { useNavHighlight } from '../components/nav-highlight';
 
 export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }) {
-    const {
-        tab: kind,
-        setTab: setKind,
-        panel,
-        minHeight,
-        onExitComplete,
-    } = useTabNavigation<'plugin' | 'skill'>('plugin');
+    const { tab: kind, setTab: setKind, panel } = useTabNavigation<'plugin' | 'skill'>('plugin');
+    const { navRef, highlightRef } = useNavHighlight(kind);
     const [data, setData] = useState<{ kind: string; items: MarketEntry[] }>({
         kind: '',
         items: [],
@@ -23,8 +17,7 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
         [busy, setBusy] = useState(false);
     const [revision, refresh] = useState(0),
         [limit, setLimit] = useState(30);
-    const cache = useRef(new Map<string, MarketEntry[]>()),
-        reduced = useReducedMotion();
+    const cache = useRef(new Map<string, MarketEntry[]>());
     useEffect(() => setLimit(30), [kind, search]);
     useEffect(() => {
         if (!ready) return;
@@ -79,19 +72,19 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
         <div className="desktop-sections">
             <div className="archive-toolbar">
                 <div>
-                    <button className="qq-refresh" onClick={onBack}>
+                    <button className="btn" onClick={onBack}>
                         <ArrowLeft size={14} />
                         返回扩展
                     </button>
                     <button
-                        className="qq-refresh"
+                        className="btn"
                         disabled={busy}
                         onClick={() => refresh((value) => value + 1)}
                     >
                         <RefreshCw size={14} className={busy ? 'market-refreshing' : undefined} />
                         刷新目录
                     </button>
-                    <button className="qq-refresh" onClick={() => void openStore()}>
+                    <button className="btn" onClick={() => void openStore()}>
                         <ExternalLink size={14} />
                         原项目市场
                     </button>
@@ -99,20 +92,14 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
                 <p>原项目公开目录，仅供浏览。</p>
             </div>
             <div className="logs-toolbar">
-                <nav className="agent-tabs" aria-label="市场类型">
+                <nav className="agent-tabs" aria-label="市场类型" ref={navRef}>
+                    <span className="agent-tab-highlight" ref={highlightRef} aria-hidden="true" />
                     {(['plugin', 'skill'] as const).map((value) => (
                         <button
                             key={value}
                             aria-current={kind === value ? 'page' : undefined}
                             onClick={() => setKind(value)}
                         >
-                            {kind === value && (
-                                <motion.span
-                                    className="agent-tab-highlight"
-                                    layoutId="market-kind"
-                                    transition={uiTransition(reduced)}
-                                />
-                            )}
                             {value === 'plugin' ? 'Plugins' : 'Skills'}
                         </button>
                     ))}
@@ -124,83 +111,56 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
                     onChange={(event) => setSearch(event.target.value)}
                 />
             </div>
-            <div ref={panel} style={{ minHeight }} className="tab-panel-frame" aria-busy={busy}>
-                <AnimatePresence mode="wait" initial={false} onExitComplete={onExitComplete}>
-                    <motion.div
-                        key={kind}
-                        className="desktop-sections"
-                        initial={{ opacity: 0, x: reduced ? 0 : 16 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: reduced ? 0 : -10, pointerEvents: 'none' }}
-                        transition={uiTransition(reduced)}
-                    >
-                        {error && items.length > 0 && (
-                            <p className="desktop-error" role="alert">
-                                {error}
+            <div ref={panel} className="tab-panel-frame" aria-busy={busy}>
+                <div className="desktop-sections page-enter" key={kind}>
+                    {error && items.length > 0 && (
+                        <p className="desktop-error" role="alert">
+                            {error}
+                        </p>
+                    )}
+                    <div className="page-enter" key={phase}>
+                        {phase === 'results' ? (
+                            <AnimatedList className="market-grid" staged>
+                                {visible.slice(0, limit).map((item) => (
+                                    <section className="ui-card console-panel" key={item.id}>
+                                        <div className="console-panel-heading">
+                                            <div>
+                                                <h2>{item.name || item.id}</h2>
+                                                <p>
+                                                    {item.author || '作者未注明'}
+                                                    {item.version ? ` · v${item.version}` : ''}
+                                                </p>
+                                            </div>
+                                            <Package size={18} />
+                                        </div>
+                                        <p className="market-description">
+                                            {item.description || '暂无说明'}
+                                        </p>
+                                        <span className="session-status">仅供浏览</span>
+                                    </section>
+                                ))}
+                            </AnimatedList>
+                        ) : (
+                            <p
+                                className={phase === 'error' ? 'desktop-error' : 'action-notice'}
+                                role={phase === 'error' ? 'alert' : 'status'}
+                            >
+                                {phase === 'loading'
+                                    ? '正在读取市场目录…'
+                                    : phase === 'error'
+                                      ? error
+                                      : search
+                                        ? '没有匹配的条目'
+                                        : '市场暂时没有条目'}
                             </p>
                         )}
-                        <AnimatePresence mode="wait" initial={false}>
-                            <motion.div
-                                key={phase}
-                                initial={{ opacity: 0, y: reduced ? 0 : 6 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                transition={uiTransition(reduced)}
-                            >
-                                {phase === 'results' ? (
-                                    <AnimatedList className="market-grid" staged>
-                                        {visible.slice(0, limit).map((item) => (
-                                            <section
-                                                className="ui-card console-panel"
-                                                key={item.id}
-                                            >
-                                                <div className="console-panel-heading">
-                                                    <div>
-                                                        <h2>{item.name || item.id}</h2>
-                                                        <p>
-                                                            {item.author || '作者未注明'}
-                                                            {item.version
-                                                                ? ` · v${item.version}`
-                                                                : ''}
-                                                        </p>
-                                                    </div>
-                                                    <Package size={18} />
-                                                </div>
-                                                <p className="market-description">
-                                                    {item.description || '暂无说明'}
-                                                </p>
-                                                <span className="session-status">仅供浏览</span>
-                                            </section>
-                                        ))}
-                                    </AnimatedList>
-                                ) : (
-                                    <p
-                                        className={
-                                            phase === 'error' ? 'desktop-error' : 'action-notice'
-                                        }
-                                        role={phase === 'error' ? 'alert' : 'status'}
-                                    >
-                                        {phase === 'loading'
-                                            ? '正在读取市场目录…'
-                                            : phase === 'error'
-                                              ? error
-                                              : search
-                                                ? '没有匹配的条目'
-                                                : '市场暂时没有条目'}
-                                    </p>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                        {!busy && visible.length > limit && (
-                            <button
-                                className="qq-refresh"
-                                onClick={() => setLimit((value) => value + 30)}
-                            >
-                                加载更多（共 {visible.length} 项）
-                            </button>
-                        )}
-                    </motion.div>
-                </AnimatePresence>
+                    </div>
+                    {!busy && visible.length > limit && (
+                        <button className="btn" onClick={() => setLimit((value) => value + 30)}>
+                            加载更多（共 {visible.length} 项）
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );

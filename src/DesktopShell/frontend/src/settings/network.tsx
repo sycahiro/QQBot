@@ -156,7 +156,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         disabled={Boolean(state.saving) || !editor.dirty('search')}
                         onClick={() => void save()}
                     >
-                        <Save size={14} />
+                        <Save size={15} />
                         保存
                     </button>
                 </div>

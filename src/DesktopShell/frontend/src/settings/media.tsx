@@ -437,7 +437,7 @@ function MediaModel({
                                         className="btn"
                                         onClick={() => setClear(!clear)}
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={15} />
                                         {clear ? '撤销清除' : '清除密钥'}
                                     </button>
                                 </div>
@@ -516,7 +516,7 @@ function MediaModel({
                     className="btn btn-primary"
                     onClick={() => void save()}
                 >
-                    <Save size={14} />
+                    <Save size={15} />
                     保存
                 </button>
             </div>

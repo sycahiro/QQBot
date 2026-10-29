@@ -48,7 +48,7 @@ export function EngineSettings({ ready }: { ready: boolean }) {
                             disabled={webuiBusy || !ready}
                             onClick={() => void openWebui()}
                         >
-                            <ExternalLink size={14} />
+                            <ExternalLink size={15} />
                             {webuiBusy ? '正在打开…' : '打开 WebUI'}
                         </button>
                         <code className="webui-url">http://127.0.0.1:5099</code>
@@ -190,7 +190,7 @@ function PasswordMemo() {
                         disabled={busy || !draft.trim()}
                         onClick={() => void save(draft)}
                     >
-                        <Save size={14} />
+                        <Save size={13} />
                         保存
                     </button>
                     {editing && (

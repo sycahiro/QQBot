@@ -307,7 +307,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 disabled={busy || !changed}
                                 onClick={() => void save()}
                             >
-                                <Save size={14} />
+                                <Save size={15} />
                                 保存
                             </button>
                         </div>
@@ -349,7 +349,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                     )
                                 }
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={15} />
                                 清理
                             </button>
                         </div>
@@ -369,7 +369,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                     )
                                 }
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={15} />
                                 清理
                             </button>
                         </div>
@@ -435,7 +435,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                                             )
                                                         }
                                                     >
-                                                        <Trash2 size={14} />
+                                                        <Trash2 size={15} />
                                                         清理
                                                     </button>
                                                 </div>
@@ -467,7 +467,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                                 )
                                             }
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={15} />
                                             清理全部{category.label}
                                         </button>
                                     ))}

@@ -256,7 +256,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                                 disabled={busy}
                                                 onClick={() => void remove(false, member)}
                                             >
-                                                <Trash2 size={14} />
+                                                <Trash2 size={15} />
                                                 删除该成员记忆
                                             </button>
                                         )}
@@ -287,7 +287,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                             disabled={busy}
                                             onClick={() => void save(member)}
                                         >
-                                            <Save size={14} />
+                                            <Save size={15} />
                                             保存
                                         </button>
                                     </div>

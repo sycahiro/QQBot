@@ -382,7 +382,7 @@ export function Stickers({ ready, account }: { ready: boolean; account: string }
                                     disabled={busy || !dirty}
                                     onClick={() => void save()}
                                 >
-                                    <Save size={14} />
+                                    <Save size={15} />
                                     保存
                                 </button>
                             </div>

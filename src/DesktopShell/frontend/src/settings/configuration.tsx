@@ -232,7 +232,7 @@ export function Configuration({
                 }
                 onClick={() => void saveSection(section)}
             >
-                <Save size={14} />
+                <Save size={15} />
                 保存
             </button>
         </div>
@@ -406,7 +406,7 @@ export function Configuration({
                                                 void saveSection('model', true);
                                         }}
                                     >
-                                        <Trash2 size={14} />
+                                        <Trash2 size={15} />
                                         删除此配置
                                     </button>
                                     <small>选择配置后，点击保存以启用。</small>
@@ -477,7 +477,7 @@ export function Configuration({
                                             disabled={!config.api.apiKeyConfigured && !clearKey}
                                             onClick={() => setClearKey(!clearKey)}
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={15} />
                                             {clearKey ? '撤销清除' : '清除密钥'}
                                         </button>
                                     </div>

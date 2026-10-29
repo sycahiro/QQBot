@@ -85,7 +85,7 @@ export function Market({ ready, onBack }: { ready: boolean; onBack: () => void }
                         刷新目录
                     </button>
                     <button className="btn" onClick={() => void openStore()}>
-                        <ExternalLink size={14} />
+                        <ExternalLink size={15} />
                         原项目市场
                     </button>
                 </div>

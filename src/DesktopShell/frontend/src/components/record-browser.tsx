@@ -34,11 +34,11 @@ export function RecordToolbar({
                     disabled={remove.disabled}
                     onClick={remove.run}
                 >
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                     {removeLabel || `删除当前${noun}`}
                 </button>
                 <button type="button" className="btn" disabled={clear.disabled} onClick={clear.run}>
-                    <Trash2 size={14} />
+                    <Trash2 size={15} />
                     清空全部{noun}
                 </button>
                 <button

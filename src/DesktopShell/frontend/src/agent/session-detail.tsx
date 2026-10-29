@@ -173,7 +173,18 @@ export function SessionDetail({ session }: { session: Session }) {
           : '正在处理';
     return (
         <div className="session-inspector">
-            <section className={`session-outcome ${session.status}`}>
+            <section
+                className={
+                    'session-outcome status-box' +
+                    (session.status === 'running'
+                        ? ' is-pending'
+                        : session.status === 'done'
+                          ? ' is-ready'
+                          : session.status === 'error'
+                            ? ' is-error'
+                            : '')
+                }
+            >
                 <div className="session-outcome-title">
                     <strong>
                         <span className="session-state-dot" />

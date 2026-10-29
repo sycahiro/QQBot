@@ -286,7 +286,7 @@ export function QqAccounts({
                 </div>
                 <div
                     className={
-                        'qq-service-hint' +
+                        'qq-service-hint status-box' +
                         (!ready || serviceStage === null
                             ? ''
                             : serviceStage === 'running'
@@ -316,7 +316,7 @@ export function QqAccounts({
                 </div>
                 <div
                     className={
-                        'qq-service-hint' +
+                        'qq-service-hint status-box' +
                         (connection?.connected
                             ? ' is-ready'
                             : connectionBusy

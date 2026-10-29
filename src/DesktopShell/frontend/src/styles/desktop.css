@@ -425,6 +425,28 @@ strong {
     margin-right: 8px;
 }
 
+.status-box {
+    transition:
+        color calc(var(--motion-duration) * 2) var(--motion-ease),
+        background-color calc(var(--motion-duration) * 2) var(--motion-ease),
+        border-color calc(var(--motion-duration) * 2) var(--motion-ease);
+}
+.status-box.is-pending {
+    border-color: color-mix(in oklab, var(--primary) 30%, transparent);
+    background: color-mix(in oklab, var(--primary) 7%, var(--card));
+    color: var(--primary);
+}
+.status-box.is-ready {
+    border-color: color-mix(in oklab, var(--success) 30%, transparent);
+    background: color-mix(in oklab, var(--success) 9%, var(--card));
+    color: var(--log-success);
+}
+.status-box.is-error {
+    border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
+    background: color-mix(in oklab, var(--destructive) 7%, var(--card));
+    color: var(--log-error);
+}
+
 .is-muted {
     background: var(--muted-foreground);
 }
@@ -960,10 +982,6 @@ strong {
     color: var(--muted-foreground);
     font-size: 12px;
     line-height: 1.7;
-    transition:
-        color var(--motion-duration) var(--motion-ease),
-        background-color var(--motion-duration) var(--motion-ease),
-        border-color var(--motion-duration) var(--motion-ease);
 }
 .qq-service-hint .status-dot {
     flex-shrink: 0;
@@ -976,21 +994,6 @@ strong {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-}
-.qq-service-hint.is-pending {
-    border-color: color-mix(in oklab, var(--primary) 30%, transparent);
-    background: color-mix(in oklab, var(--primary) 7%, var(--card));
-    color: var(--primary);
-}
-.qq-service-hint.is-ready {
-    border-color: color-mix(in oklab, var(--success) 30%, transparent);
-    background: color-mix(in oklab, var(--success) 9%, var(--card));
-    color: var(--log-success);
-}
-.qq-service-hint.is-error {
-    border-color: color-mix(in oklab, var(--destructive) 30%, transparent);
-    background: color-mix(in oklab, var(--destructive) 7%, var(--card));
-    color: var(--log-error);
 }
 
 .qq-process-list {
@@ -1596,15 +1599,6 @@ p.action-notice {
     flex: none;
     border-radius: 50%;
     background: currentColor;
-}
-.session-outcome.done strong {
-    color: var(--success);
-}
-.session-outcome.error strong {
-    color: var(--destructive);
-}
-.session-outcome.running strong {
-    color: var(--primary);
 }
 .session-outcome p {
     margin-top: 8px;

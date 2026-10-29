@@ -207,8 +207,10 @@ button:focus-visible {
 }
 
 .btn:disabled {
-    opacity: 0.55;
     cursor: default;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    border-color: var(--border);
 }
 
 .btn-primary {

@@ -423,6 +423,34 @@ def test_image_tool_sequence_real_image_parts_and_log_has_no_binary(stack, monke
     assert [name for name, _ in connection.calls] == ["get_msg", "send_private_msg"]
 
 
+def test_media_model_failure_skips_understanding_and_continues(stack, monkeypatch):
+    service, receiver, sessions, settings, _, connection, model = stack
+    original = model.complete
+
+    async def fetch(self, url, permit):
+        return raster()
+
+    async def failing_complete(api, messages, tools):
+        if not tools and any(isinstance(m.get("content"), list) for m in messages):
+            raise ModelError("模型请求超时，本轮已停止")
+        return await original(api, messages, tools)
+
+    monkeypatch.setattr(ImageDownloader, "fetch", fetch)
+    monkeypatch.setattr(model, "complete", failing_complete)
+    settings.save(ACCOUNT, {"api": {"vision": True}})
+    install_native_images(connection)
+    model.responses = [image_tool_response(), result("send_message", "finish")]
+    service.enable(ACCOUNT, True)
+    receiver.receive(ACCOUNT, image_packet())
+    wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] == "done")
+    assert sessions.list(ACCOUNT)[0]["status"] == "done"
+    assert "understandingFailed" in model.calls[1][-1]["content"]
+    assert "识图模型超时或请求失败" in model.calls[1][-1]["content"]
+    detail = json.dumps(sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"]), ensure_ascii=False)
+    assert "已跳过图片理解" in detail
+    assert [name for name, _ in connection.calls] == ["get_msg", "send_private_msg"]
+
+
 def test_disabled_image_tool_cannot_fetch_even_if_model_calls_it(stack):
     service, receiver, sessions, _, _, connection, model = stack
     model.responses = [image_tool_response(), result("finish")]

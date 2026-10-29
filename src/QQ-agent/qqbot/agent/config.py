@@ -40,6 +40,7 @@ DEFAULTS = {
     "allow": {"groups": [], "private": []},
     "deny": {"groups": [], "private": []},
     "blockedUsers": [],
+    "ownerQQ": "",
     "groupTrigger": "at",
     "groupKeywords": [],
     "groupRandomPercent": 10,
@@ -52,7 +53,7 @@ DEFAULTS = {
 }
 
 
-GLOBAL_FIELDS = frozenset({"api", "profiles", "activeProfileId", "webSearch", "mediaOptions", "defaultPersona"})
+GLOBAL_FIELDS = frozenset({"api", "profiles", "activeProfileId", "webSearch", "mediaOptions", "defaultPersona", "ownerQQ"})
 
 
 def id_list(value):
@@ -143,6 +144,9 @@ def validate(config):
         for kind in ("groups", "private"):
             config[field][kind] = id_list(config[field][kind])
     config["blockedUsers"] = id_list(config["blockedUsers"])
+    owner = config["ownerQQ"]
+    if not isinstance(owner, str) or (owner and not PEER_RE.fullmatch(owner)):
+        raise ValueError("管理员 QQ 号格式无效")
     if config["groupTrigger"] not in ("at", "keywords", "random", "all"):
         raise ValueError("群聊触发方式无效")
     if (
@@ -253,7 +257,9 @@ def merge_config(config, patch):
 
 
 def allowed(kind, peer, sender, config):
-    """与原 app.js allowed 一致：拒绝优先；白名单为空时不放行。"""
+    """与原 app.js allowed 一致：拒绝优先；白名单为空时不放行。管理员不受名单限制。"""
+    if str(sender) == config.get("ownerQQ") and config.get("ownerQQ"):
+        return True
     field = "groups" if kind == "group" else "private"
     return (
         str(peer) not in config["deny"][field]

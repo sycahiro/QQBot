@@ -106,7 +106,8 @@ function fields(draft: SettingsDraft, section: Section) {
     if (section === 'model')
         return { api: modelApi(draft), id: draft.profileId, name: draft.profileName };
     if (section === 'persona') return { persona: draft.config.persona };
-    if (section === 'defaultPersona') return { defaultPersona: draft.config.defaultPersona };
+    if (section === 'defaultPersona')
+        return { defaultPersona: draft.config.defaultPersona, ownerQQ: draft.config.ownerQQ };
     if (section === 'scope')
         return {
             groups: draft.lists.groups,
@@ -146,7 +147,11 @@ function mergeSection(draft: SettingsDraft, saved: SettingsDraft, section: Secti
     if (section === 'defaultPersona')
         return {
             ...draft,
-            config: { ...draft.config, defaultPersona: saved.config.defaultPersona },
+            config: {
+                ...draft.config,
+                defaultPersona: saved.config.defaultPersona,
+                ownerQQ: saved.config.ownerQQ,
+            },
         };
     if (section === 'scope')
         return {

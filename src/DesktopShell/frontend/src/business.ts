@@ -69,6 +69,7 @@ export interface BotConfig {
     allow: { groups: string[]; private: string[] };
     deny: { groups: string[]; private: string[] };
     blockedUsers: string[];
+    ownerQQ: string;
     groupTrigger: 'at' | 'keywords' | 'random' | 'all';
     groupKeywords: string[];
     groupRandomPercent: number;

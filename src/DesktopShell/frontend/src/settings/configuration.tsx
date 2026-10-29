@@ -326,6 +326,19 @@ export function Configuration({
                                     }
                                 />
                             </label>
+                            <label className="bot-field">
+                                管理员 QQ
+                                <input
+                                    value={config.ownerQQ ?? ''}
+                                    placeholder="留空表示未设置；TA 的消息不受名单限制"
+                                    onChange={(e) =>
+                                        setConfig({
+                                            ...config,
+                                            ownerQQ: e.target.value.replace(/[^0-9]/g, ''),
+                                        })
+                                    }
+                                />
+                            </label>
                         </div>
                         {footer('defaultPersona')}
                     </section>

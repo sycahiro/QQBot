@@ -5,6 +5,8 @@ import math
 import re
 import time
 
+from ..faces import face_text
+
 ACCOUNT_RE = re.compile(r"[1-9][0-9]{4,11}\Z")
 PEER_RE = re.compile(r"[1-9][0-9]{0,19}\Z")
 NUMERIC_RE = re.compile(r"-?[0-9]{1,24}\Z")
@@ -50,7 +52,7 @@ def segments_text(segments):
             parts.append(str(data.get("text", "")))
         elif kind == "face":
             face_id = str(data.get("id", "")).strip()
-            parts.append("[表情:" + face_id + "]" if face_id.isdigit() else "[表情]")
+            parts.append(face_text(face_id))
         elif kind == "at":
             parts.append(
                 "@全体成员" if str(data.get("qq")) == "all" else "@" + str(data.get("qq", ""))

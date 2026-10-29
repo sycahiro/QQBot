@@ -7,6 +7,7 @@ import threading
 import time
 
 from ..qq.engine import EngineError
+from ..faces import NAMES
 from ..storage.messages import chat_key, numeric_id, segments_text
 
 
@@ -23,26 +24,46 @@ def _validate_model_text(text):
         )
 
 
-# QQ built-in emoticon: OneBot CQ form [CQ:face,id=N] and the [表情:N] form
-# models see in archived chat text. Market faces use non-numeric ids; skip.
-FACE_PATTERN = re.compile(r"\[(?:CQ:face,id=|表情:)(\d{1,3})\]", re.I)
+# QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
+# named [表情:呲牙] (resolved via the face table). Unknown names stay literal.
+FACE_PATTERN = re.compile(r"\[(?:CQ:face,id=|表情:)(\d{1,3}|[a-zA-Z·\u4e00-\u9fff]{1,6})\]", re.I)
 
 
 def face_segments(text):
     """Split plain text into alternating text/face OneBot segments."""
-    parts = FACE_PATTERN.split(text)
     segments = []
-    for index, part in enumerate(parts):
-        if index % 2:
-            face_id = int(part)
+    pos = 0
+    for match in FACE_PATTERN.finditer(text):
+        token = match.group(1)
+        if match.start() > pos:
+            segments.append({"type": "text", "data": {"text": text[pos : match.start()]}})
+        face_id = int(token) if token.isdigit() else NAMES.get(token)
+        if face_id is None:
+            # Unknown name: keep the original bracketed form visible as text.
+            if segments and segments[-1].get("type") == "text":
+                segments[-1]["data"]["text"] += match.group(0)
+            else:
+                segments.append({"type": "text", "data": {"text": match.group(0)}})
+        else:
             if face_id > 400:
-                raise ValueError(f"QQ 表情编号 {face_id} 无效；请用聊天记录里见过的编号")
+                raise ValueError(f"QQ 表情编号 {face_id} 无效；请用表内编号或名字")
             segments.append({"type": "face", "data": {"id": str(face_id)}})
-        elif part:
-            segments.append({"type": "text", "data": {"text": part}})
-    if not segments:
+        pos = match.end()
+    if pos < len(text):
+        segments.append({"type": "text", "data": {"text": text[pos:]}})
+    merged = []
+    for segment in segments:
+        if (
+            segment["type"] == "text"
+            and merged
+            and merged[-1]["type"] == "text"
+        ):
+            merged[-1]["data"]["text"] += segment["data"]["text"]
+        else:
+            merged.append(segment)
+    if not merged:
         raise ValueError("发送内容为空")
-    return segments
+    return merged
 
 
 class Sender:

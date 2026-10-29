@@ -182,3 +182,45 @@ def test_media_save_updates_only_active_profile_and_rejects_stale_profile(tmp_pa
         assert not (tmp_path / "accounts").exists()
     finally:
         bridge._reviews.close()
+
+
+def test_owner_qq_roundtrip_and_legacy_file_without_it(tmp_path):
+    globals_ = GlobalSettings(tmp_path)
+    globals_.save("global", {"ownerQQ": "23456789"})
+    assert GlobalSettings(tmp_path).read()["ownerQQ"] == "23456789"
+    # 旧版本文件没有 ownerQQ 字段也能读取。
+    legacy = json.loads((tmp_path / "global-settings.json").read_text(encoding="utf-8"))
+    legacy.pop("ownerQQ", None)
+    (tmp_path / "global-settings.json").write_text(
+        json.dumps(legacy, ensure_ascii=False), encoding="utf-8"
+    )
+    assert GlobalSettings(tmp_path).read()["ownerQQ"] == ""
+    with pytest.raises(ValueError, match="管理员 QQ 号格式无效"):
+        globals_.save("global", {"ownerQQ": "not-a-qq"})
+
+
+def test_owner_bypasses_allowlists_and_prompt_mentions_admin(tmp_path):
+    from qqbot.agent.config import SettingsStore, allowed
+    from qqbot.agent.prompt import prompt
+    from qqbot.storage.database import Database
+
+    database = Database(tmp_path / "owner.sqlite3")
+    try:
+        globals_ = GlobalSettings(tmp_path)
+        globals_.save("global", {"ownerQQ": "23456789"})
+        store = SettingsStore(database, global_settings=globals_)
+        store.save(
+            "12345678",
+            {
+                "allow": {"groups": [], "private": []},
+                "persona": {"roleText": "角色", "customRules": ""},
+            },
+        )
+        config = store.read("12345678")
+        assert allowed("private", "11223344", "23456789", config)
+        assert allowed("group", "99887766", "23456789", config)
+        assert not allowed("private", "11223344", "4396", config)
+        messages = prompt(config, "12345678", "private:23456789", [], [])
+        assert "【管理员】QQ 号 23456789" in messages[0]["content"]
+    finally:
+        database.close()

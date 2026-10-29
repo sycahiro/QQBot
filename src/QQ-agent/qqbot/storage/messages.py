@@ -48,6 +48,9 @@ def segments_text(segments):
             continue
         if kind == "text":
             parts.append(str(data.get("text", "")))
+        elif kind == "face":
+            face_id = str(data.get("id", "")).strip()
+            parts.append("[表情:" + face_id + "]" if face_id.isdigit() else "[表情]")
         elif kind == "at":
             parts.append(
                 "@全体成员" if str(data.get("qq")) == "all" else "@" + str(data.get("qq", ""))
@@ -60,7 +63,6 @@ def segments_text(segments):
                     "image": "[图片]",
                     "record": "[语音]",
                     "video": "[视频]",
-                    "face": "[表情]",
                     "forward": "[合并转发聊天记录]",
                     "file": "[文件]",
                     "json": "[卡片消息]",

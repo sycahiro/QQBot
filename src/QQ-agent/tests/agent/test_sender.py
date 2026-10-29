@@ -2,7 +2,7 @@ import json
 import threading
 
 import pytest
-from qqbot.agent.sender import DeliveryError, Sender
+from qqbot.agent.sender import DeliveryError, Sender, face_segments
 from qqbot.storage.database import Database
 from qqbot.storage.messages import MessageStore
 
@@ -254,3 +254,31 @@ def test_reference_invalidated_while_waiting_in_send_queue_is_not_dispatched(sen
     worker.join(2)
     assert not worker.is_alive() and errors
     assert not connection.calls and not session["sent"]
+
+
+def test_face_codes_are_split_into_onebot_face_segments():
+    assert face_segments("早 [CQ:face,id=13]") == [
+        {"type": "text", "data": {"text": "早 "}},
+        {"type": "face", "data": {"id": "13"}},
+    ]
+    assert face_segments("[表情:47]你说说") == [
+        {"type": "face", "data": {"id": "47"}},
+        {"type": "text", "data": {"text": "你说说"}},
+    ]
+    assert face_segments("[CQ:face,id=13]") == [{"type": "face", "data": {"id": "13"}}]
+    # 非数字或带空格的写法不是表情码，按普通文本原样发送。
+    assert face_segments("[表情:abc] [CQ:face, id=13]") == [
+        {"type": "text", "data": {"text": "[表情:abc] [CQ:face, id=13]"}}
+    ]
+    with pytest.raises(ValueError, match="表情编号"):
+        face_segments("[CQ:face,id=999]")
+
+
+def test_face_messages_keep_receipt_dedupe_and_archive_text(sender):
+    send, connection, messages, session = sender
+    send.send(ACCOUNT, KEY, {"messages": ["早 [表情:13]"]}, 0, session, lambda _: None)
+    assert [item["text"] for item in session["sent"]] == ["早 [表情:13]"]
+    assert messages.messages(ACCOUNT, KEY)["items"][0]["text"] == "早 [表情:13]"
+    # 相同正文在本次处理内去重，回执为空。
+    result = send.send(ACCOUNT, KEY, {"messages": ["早 [表情:13]"]}, 0, session, lambda _: None)
+    assert result["deduped"] == 1 and result["sent"] == 0

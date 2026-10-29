@@ -23,6 +23,28 @@ def _validate_model_text(text):
         )
 
 
+# QQ built-in emoticon: OneBot CQ form [CQ:face,id=N] and the [表情:N] form
+# models see in archived chat text. Market faces use non-numeric ids; skip.
+FACE_PATTERN = re.compile(r"\[(?:CQ:face,id=|表情:)(\d{1,3})\]", re.I)
+
+
+def face_segments(text):
+    """Split plain text into alternating text/face OneBot segments."""
+    parts = FACE_PATTERN.split(text)
+    segments = []
+    for index, part in enumerate(parts):
+        if index % 2:
+            face_id = int(part)
+            if face_id > 400:
+                raise ValueError(f"QQ 表情编号 {face_id} 无效；请用聊天记录里见过的编号")
+            segments.append({"type": "face", "data": {"id": str(face_id)}})
+        elif part:
+            segments.append({"type": "text", "data": {"text": part}})
+    if not segments:
+        raise ValueError("发送内容为空")
+    return segments
+
+
 class Sender:
     def __init__(self, connection, messages, permit, *, dispatch_lock=None, rapid_submit_history=None):
         self._connection, self._messages, self._permit = connection, messages, permit
@@ -93,12 +115,19 @@ class Sender:
             raise ValueError("发送内容必须是 1 到 4 条非空文本，每条不超过 3000 字")
         for text in values:
             _validate_model_text(text)
+        bodies = [face_segments(text) for text in values]
         prefix = self._prefix(account, key, args)
         sent, deduped = [], 0
-        for index, text in enumerate(values):
-            segments = (prefix if index == 0 else []) + [{"type": "text", "data": {"text": text}}]
+        for index, segments in enumerate(bodies):
             receipt = self._deliver(
-                account, key, segments, ("text", text), text, epoch, session, persist
+                account,
+                key,
+                (prefix if index == 0 else []) + segments,
+                ("text", values[index]),
+                values[index],
+                epoch,
+                session,
+                persist,
             )
             if receipt is None:
                 deduped += 1
@@ -115,9 +144,9 @@ class Sender:
             raise ValueError("待发送图片超出通信大小上限")
         note = args.get("note", "").strip().replace("\x00", "")
         _validate_model_text(note)
+        note_parts = face_segments(note) if note else []
         segments = prefix + [{"type": "image", "data": {"file": "base64://" + encoded}}]
-        if note:
-            segments.append({"type": "text", "data": {"text": note}})
+        segments.extend(note_parts)
         # Archive a placeholder, never the base64 payload or a local path.
         archive = prefix + [{"type": "image", "data": {"summary": "[图片]"}}]
         if note:

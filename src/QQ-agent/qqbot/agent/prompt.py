@@ -31,6 +31,7 @@ def prompt(config, account, key, context, trigger_ids, memory=""):
         system += "understandingFailed 表示识图模型超时或出错，尝试看图但没有看成：这不是主动不看，按图没打开或看不懂来如实说明即可，不要说“我没看”，不要猜测图片内容，其余照常回复。"
     else:
         system += "\n\n【图片】图片理解当前关闭，[图片] 只是占位符，你没有看到图片内容，不要猜测。"
+    system += "\n\n【QQ 表情】send_message 正文里可以用 [CQ:face,id=编号] 插入 QQ 自带表情，编号是 QQ 经典表情 id，例如 [CQ:face,id=13]（呲牙）、[CQ:face,id=20]（偷笑）、[CQ:face,id=21]（可爱）、[CQ:face,id=22]（白眼）、[CQ:face,id=28]（憨笑）、[CQ:face,id=32]（疑问）、[CQ:face,id=44]（坏笑）、[CQ:face,id=47]（委屈）。聊天记录里别人的表情显示为 [表情:编号]，看到合适的可以直接照用该编号。表情是点缀，一条消息最多一个，不刷屏、不连发；不确定的编号不要硬编，写错会发送失败。"
     if config["api"].get("vision") and config["api"].get("sendImages"):
         system += "\n\n【发图】send_image 只发送当前聊天的 HTTPS 图片直链。先 preview=true 查看实际图片，收到媒体理解结果确认合适后，在下一次调用中发送。"
         system += "不要编造图片地址；没有可靠直链就说明无法发图。每次最多预览和发送各 3 张，动图只发送第一帧。不要把预览说成已发送。"

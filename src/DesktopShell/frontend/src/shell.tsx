@@ -323,6 +323,16 @@ export function DesktopShell() {
     );
 }
 
+// 运行时长基线放在模块级：info.uptimeSeconds 是一次性快照，切页会卸载
+// Overview，组件内基线会跟着重置。模块级基线跟随整个页面会话，重挂不重置。
+let uptimeBaseline: { seconds: number; at: number } | null = null;
+
+function formatUptime(elapsed: number): string {
+    if (elapsed < 60) return `${elapsed} 秒`;
+    if (elapsed < 3600) return `${Math.floor(elapsed / 60)} 分`;
+    return `${Math.floor(elapsed / 3600)} 时 ${Math.floor((elapsed % 3600) / 60)} 分`;
+}
+
 function Overview({
     info,
     connection,
@@ -337,9 +347,15 @@ function Overview({
     const { items } = useSessions(Boolean(info) && connected);
     const recent = connected ? items : [];
     useEffect(() => {
-        const start = performance.now();
+        if (info && !uptimeBaseline) {
+            uptimeBaseline = { seconds: info.uptimeSeconds, at: performance.now() };
+        }
+        if (!uptimeBaseline) return;
+        const baseline = uptimeBaseline;
         const update = () =>
-            setElapsed((info?.uptimeSeconds ?? 0) + Math.floor((performance.now() - start) / 1000));
+            setElapsed(
+                Math.floor(baseline.seconds + (performance.now() - baseline.at) / 1000),
+            );
         update();
         const timer = setInterval(update, 1000);
         return () => clearInterval(timer);
@@ -379,7 +395,7 @@ function Overview({
         },
         {
             label: '运行时长',
-            value: elapsed < 60 ? `${elapsed} 秒` : `${Math.floor(elapsed / 60)} 分`,
+            value: info ? formatUptime(elapsed) : '载入中',
             hint: '本次桌面应用的运行时间',
             icon: Clock3,
         },

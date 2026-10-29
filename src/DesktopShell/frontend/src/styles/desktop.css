@@ -1169,6 +1169,7 @@ strong {
 }
 p.action-notice {
     margin-top: 12px;
+    margin-bottom: 12px;
 }
 .archive-toolbar > div {
     display: flex;
@@ -2969,19 +2970,19 @@ html.theme-changing *::after {
 .storage-accounts {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
 }
 .storage-account {
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 16px 18px;
+    padding: 12px 14px;
 }
 .storage-account-heading {
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 .storage-categories {
     display: flex;
@@ -2992,7 +2993,7 @@ html.theme-changing *::after {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    padding: 14px 0;
+    padding: 10px 0;
     border-top: 1px solid var(--border);
     min-width: 0;
 }
@@ -3003,11 +3004,11 @@ html.theme-changing *::after {
 .storage-category p {
     font-size: 12px;
     line-height: 1.6;
-    margin: 8px 0 0;
+    margin: 2px 0 0;
 }
 .storage-category small {
     display: block;
-    margin-top: 4px;
+    margin-top: 2px;
 }
 .storage-batch {
     display: flex;

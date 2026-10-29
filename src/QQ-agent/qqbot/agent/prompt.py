@@ -105,7 +105,7 @@ def tool(name, description, properties, required=()):
 TOOLS = [
     tool(
         "send_message",
-        "发送文本到当前聊天。普通文本输出不会发给对方。",
+        "发送文本到当前聊天，正文可含 QQ 表情码如 [表情:呲牙]（见【QQ 表情】说明）。普通文本输出不会发给对方。",
         {
             "messages": {
                 "description": '推荐使用真正的字符串数组，例如 ["你好"]；不要把数组编码成字符串。若要发送 JSON 原文，将原文作为数组中的一条文本。',

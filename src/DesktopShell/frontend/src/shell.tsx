@@ -353,9 +353,7 @@ function Overview({
         if (!uptimeBaseline) return;
         const baseline = uptimeBaseline;
         const update = () =>
-            setElapsed(
-                Math.floor(baseline.seconds + (performance.now() - baseline.at) / 1000),
-            );
+            setElapsed(Math.floor(baseline.seconds + (performance.now() - baseline.at) / 1000));
         update();
         const timer = setInterval(update, 1000);
         return () => clearInterval(timer);

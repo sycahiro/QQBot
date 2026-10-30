@@ -94,9 +94,12 @@ class StorageManagement:
         return sorted(groups, key=lambda item: (item["started"], item["folder"].name))
 
     def _engine_files(self):
-        """SnowLuma 引擎日志按天滚动，文件名里的日期决定保留；当天的视为活跃。"""
-        root = self._paths.runtime
-        folder = self._paths.snowluma_home / "logs"
+        """SnowLuma 引擎日志按天滚动，文件名里的日期决定保留；当天的视为活跃。
+
+        引擎家目录在项目 data/ 下、不在 runtime 内，所有校验须锚定它自己。
+        """
+        root = self._paths.snowluma_home
+        folder = root / "logs"
         today = datetime.now().strftime("%Y-%m-%d")
         items = []
         for file in children(folder, root):
@@ -235,7 +238,9 @@ class StorageManagement:
             expired = days > 0 and item["started"] < now - days * 86400
             if item["active"] or not (all_closed or expired or total > cap):
                 continue
-            cleaned = remove_files(item["files"], self._paths.runtime)
+            # 引擎日志（folder 为 None）住在 snowluma 家目录下，校验锚点不能是 runtime。
+            anchor = self._paths.runtime if item["folder"] is not None else self._paths.snowluma_home
+            cleaned = remove_files(item["files"], anchor)
             for key in ("deletedFiles", "freedBytes"):
                 result[key] += cleaned[key]
             result["failures"].extend(cleaned["failures"])

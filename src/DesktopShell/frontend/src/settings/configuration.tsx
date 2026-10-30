@@ -12,6 +12,7 @@ import {
     UserRound,
     Smile,
     Wrench,
+    LoaderCircle,
 } from 'lucide-react';
 import type { BotConfig } from '../business';
 import { draftApi, type Section, type SettingsDraft } from '../agent/settings-editor';
@@ -502,12 +503,11 @@ export function Configuration({
                                         disabled={Boolean(checking) || !config.api.baseUrl}
                                         onClick={() => void check('list')}
                                     >
-                                        <List
-                                            size={15}
-                                            className={
-                                                checking === 'list' ? 'qq-scanning' : undefined
-                                            }
-                                        />
+                                        {checking === 'list' ? (
+                                            <LoaderCircle size={15} className="qq-scanning" />
+                                        ) : (
+                                            <List size={15} />
+                                        )}
                                         获取模型列表
                                     </button>
                                     <button
@@ -520,12 +520,11 @@ export function Configuration({
                                         }
                                         onClick={() => void check('test')}
                                     >
-                                        <Radio
-                                            size={15}
-                                            className={
-                                                checking === 'test' ? 'qq-scanning' : undefined
-                                            }
-                                        />
+                                        {checking === 'test' ? (
+                                            <LoaderCircle size={15} className="qq-scanning" />
+                                        ) : (
+                                            <Radio size={15} />
+                                        )}
                                         基础连通性
                                     </button>
                                     <button
@@ -538,12 +537,11 @@ export function Configuration({
                                         }
                                         onClick={() => void check('tools')}
                                     >
-                                        <Wrench
-                                            size={15}
-                                            className={
-                                                checking === 'tools' ? 'qq-scanning' : undefined
-                                            }
-                                        />
+                                        {checking === 'tools' ? (
+                                            <LoaderCircle size={15} className="qq-scanning" />
+                                        ) : (
+                                            <Wrench size={15} />
+                                        )}
                                         测试工具调用
                                     </button>
                                 </div>

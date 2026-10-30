@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Image, Save, Radio, List, SquarePen, Trash2 } from 'lucide-react';
+import { Image, Save, Radio, List, SquarePen, Trash2, LoaderCircle } from 'lucide-react';
 import type { BotConfig } from '../business';
 import { Select } from '../components/select';
 import { Collapse } from '../components/presence';
@@ -490,18 +490,20 @@ function MediaModel({
                 <div className="form-wide model-check-actions">
                     {editing && (
                         <button type="button" className="btn" onClick={() => void check(true)}>
-                            <List
-                                size={15}
-                                className={checking === 'list' ? 'qq-scanning' : undefined}
-                            />
+                            {checking === 'list' ? (
+                                <LoaderCircle size={15} className="qq-scanning" />
+                            ) : (
+                                <List size={15} />
+                            )}
                             获取模型列表
                         </button>
                     )}
                     <button type="button" className="btn" onClick={() => void check(false)}>
-                        <Radio
-                            size={15}
-                            className={checking === 'image' ? 'qq-scanning' : undefined}
-                        />
+                        {checking === 'image' ? (
+                            <LoaderCircle size={15} className="qq-scanning" />
+                        ) : (
+                            <Radio size={15} />
+                        )}
                         测试图片输入
                     </button>
                     <small role={checking ? 'status' : undefined}>

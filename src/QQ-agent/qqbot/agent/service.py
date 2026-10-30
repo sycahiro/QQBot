@@ -736,6 +736,7 @@ class AgentService:
             finished = False
             poke_calls = 0
             recall_calls = 0
+            finish_bounced = False
             rescued = False
             rounds = config["api"]["maxRounds"]
             for round_index in range(rounds):
@@ -775,9 +776,11 @@ class AgentService:
                             {
                                 "role": "user",
                                 "content": (
-                                    "【系统纠正】你上一条回复只是普通文字，没有调用任何工具，"
-                                    "那些文字不会发到 QQ，用户完全看不到。请立刻调用 send_message，"
-                                    "把你要说的话放进 messages 数组；如果你想保持安静或结束处理，"
+                                    "【系统纠正】你上一条回复只是普通文字（包括把 {\"messages\": […]} "
+                                    "这类参数 JSON 写在正文里），没有发生任何真正的工具调用，"
+                                    "那些文字不会发到 QQ，用户完全看不到。请立刻以函数调用形式调用 "
+                                    "send_message，把你要说的话放进它的 messages 字符串数组；"
+                                    "写在正文里的 JSON 不是工具调用。如果你想保持安静或结束处理，"
                                     "请调用 finish。不要再次只输出普通文字。"
                                 ),
                             }
@@ -825,6 +828,16 @@ class AgentService:
                         elif name == "finish":
                             if set(args) - {"summary"} or not isinstance(args.get("summary"), str):
                                 raise ValueError("结束说明格式无效")
+                            # 打回后模型常从 finish 逃生：一句没发就结束处理。
+                            # 驳回一次，要求真正 send_message；再次 finish 才放行。
+                            if rescued and not session["sent"] and not finish_bounced:
+                                finish_bounced = True
+                                raise ValueError(
+                                    "finish 的 summary 只是管理端备注，QQ 里什么都看不到；"
+                                    "你之前已经写好了想回的话，却还没有真正发送。"
+                                    "请立刻调用 send_message 把要说的话发出去；"
+                                    "如果确实决定保持沉默，再次调用 finish 即可结束。"
+                                )
                             session["reason"] = args["summary"][:300]
                             result = {"finished": True}
                             finished = True

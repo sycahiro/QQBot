@@ -341,6 +341,29 @@ def test_plain_assistant_text_is_rescued_into_a_real_send(stack):
     assert [r["kind"] for r in item["records"]].count("note") == 1
 
 
+def test_finish_after_rescued_text_without_sends_is_bounced_once(stack):
+    service, receiver, sessions, _, _, connection, model = stack
+    # 打回后模型从 finish 逃生：一句没发就想结束处理，必须驳回一次逼它真正发送。
+    model.responses = [
+        result(content='{"messages": ["忘了 下次分开发"]}'),
+        result("finish"),
+        result("send_message", "finish"),
+    ]
+    service.enable(ACCOUNT, True)
+    receiver.receive(ACCOUNT, packet())
+    wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] != "running")
+    item = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
+    assert item["status"] == "done" and len(model.calls) == 3 and len(connection.calls) == 1
+    finish_records = [r for r in item["records"] if r["kind"] == "tool" and r["name"] == "finish"]
+    assert [r["isError"] for r in finish_records] == [True, False]
+    assert "summary 只是管理端备注" in finish_records[0]["result"]["error"]
+    # 驳回理由确实进入了下一次模型请求。
+    assert any(
+        isinstance(m.get("content"), str) and "summary 只是管理端备注" in m["content"]
+        for m in model.calls[2]
+    )
+
+
 def test_explicit_finish_without_sending_remains_valid_silence(stack):
     service, receiver, sessions, _, _, connection, model = stack
     model.responses = [result("finish")]

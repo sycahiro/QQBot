@@ -103,7 +103,15 @@ class Sender:
             if isinstance(values, str):
                 if re.match(r'^\[\s*"', text) and not text.endswith("]"):
                     raise ValueError("messages 包含错误的数组包装；请使用真正的字符串数组")
-                values = [values]
+                # Models keep passing one string with blank-line separated
+                # sentences although one message carries one thing. Honor the
+                # intended split like the double-encoded array decode above.
+                paragraphs = [
+                    part.strip() for part in re.split(r"\n\s*\n", values) if part.strip()
+                ]
+                if len(paragraphs) > 4:
+                    paragraphs = paragraphs[:3] + ["\n\n".join(paragraphs[3:])]
+                values = paragraphs if len(paragraphs) >= 2 else [values]
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, str):

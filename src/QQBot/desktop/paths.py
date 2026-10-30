@@ -60,7 +60,8 @@ class DesktopPaths:
 
     @classmethod
     def discover(cls, runtime: str | None = None):
-        root = Path(__file__).resolve().parents[4]
+        # 本文件位于 <项目根>/src/QQBot/desktop/，向上三级即项目根。
+        root = Path(__file__).resolve().parents[3]
         return cls(root, Path(runtime).resolve() if runtime else root / "runtime")
 
     @property

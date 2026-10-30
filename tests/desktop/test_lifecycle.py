@@ -218,3 +218,13 @@ def test_real_frontend_compiles_in_memory_and_exits_before_window_load(tmp_path)
             assert result.returncode == 0, result.stderr[:1000]
     finally:
         document.close()
+
+
+def test_discover_anchors_project_root_from_source_layout():
+    """discover() 从源码文件位置向上定位项目根，层级错一位就会把 runtime 建到项目外。"""
+    paths = DesktopPaths.discover()
+    assert paths.root == ROOT
+    assert (paths.root / "src" / "QQBot" / "main.py").is_file()
+    assert (paths.root / "tools" / "node" / "node.exe").is_file()
+    assert paths.runtime == ROOT / "runtime"
+    assert paths.node == ROOT / "tools" / "node" / "node.exe"

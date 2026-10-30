@@ -4,12 +4,12 @@ import json
 import threading
 from pathlib import Path
 
-from .paths import adopt, save_state
+from .paths import save_state
 
 
 def appearance_file(runtime):
-    """主题偏好文件的位置；老安装的 runtime/appearance.json 自动搬入 settings/。"""
-    return adopt(Path(runtime) / "settings" / "appearance.json", Path(runtime) / "appearance.json")
+    """主题偏好文件的位置。"""
+    return Path(runtime) / "settings" / "appearance.json"
 
 
 class Appearance:

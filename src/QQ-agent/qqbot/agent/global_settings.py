@@ -5,7 +5,7 @@ import json
 import threading
 from pathlib import Path
 
-from ..desktop.paths import adopt, save_state
+from ..desktop.paths import save_state
 from .config import DEFAULTS, GLOBAL_FIELDS, merge_config, validate, validate_api
 from .media_models import FEATURES
 from .profiles import check_api, manage_profile, public_config
@@ -16,9 +16,7 @@ MEDIA_FIELDS = frozenset({"vision", "visionModel", "sendImages"})
 
 class GlobalSettings:
     def __init__(self, runtime):
-        self._file = adopt(
-            Path(runtime) / "settings" / "global.json", Path(runtime) / "global-settings.json"
-        )
+        self._file = Path(runtime) / "settings" / "global.json"
         self._lock = threading.RLock()
 
     def read(self, scope="global", *, public=False):

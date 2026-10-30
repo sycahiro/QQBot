@@ -184,15 +184,14 @@ def test_media_save_updates_only_active_profile_and_rejects_stale_profile(tmp_pa
         bridge._reviews.close()
 
 
-def test_owner_qq_roundtrip_and_legacy_file_without_it(tmp_path):
+def test_owner_qq_roundtrip_and_file_without_it(tmp_path):
     globals_ = GlobalSettings(tmp_path)
     globals_.save("global", {"ownerQQ": "23456789"})
     assert GlobalSettings(tmp_path).read()["ownerQQ"] == "23456789"
-    # 旧版本布局（runtime/global-settings.json）没有 ownerQQ 字段也能读取：新实例自动迁移旧文件。
+    # 没有 ownerQQ 字段的文件（后加的可选字段）也能读取，按未设置处理。
     legacy = json.loads((tmp_path / "settings" / "global.json").read_text(encoding="utf-8"))
     legacy.pop("ownerQQ", None)
-    (tmp_path / "settings" / "global.json").unlink()
-    (tmp_path / "global-settings.json").write_text(
+    (tmp_path / "settings" / "global.json").write_text(
         json.dumps(legacy, ensure_ascii=False), encoding="utf-8"
     )
     assert GlobalSettings(tmp_path).read()["ownerQQ"] == ""

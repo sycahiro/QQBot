@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import gzip
 import json
 import zlib

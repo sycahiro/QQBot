@@ -75,34 +75,3 @@ def test_connecting_records_the_chosen_account_first(tmp_path):
     assert result["ok"] is True
     # 列表里点「连接」就等于选定账号，必须先落盘再连接。
     assert calls == [("choose", "12345678"), ("connect", "12345678")]
-
-def test_connecting_records_the_chosen_account_first(tmp_path):
-    calls = []
-
-    class Selection:
-        def read(self):
-            return None
-
-    class Connection:
-        def choose(self, target):
-            calls.append(("choose", target["uin"]))
-            return target["uin"]
-
-        def connect(self, target):
-            calls.append(("connect", target["uin"]))
-            return {"state": "ready", "connected": True, "account": {"uin": target["uin"]}}
-
-        def status(self):
-            return {"state": "idle", "connected": False, "account": None}
-
-    bridge = DesktopBridge(
-        DesktopPaths(tmp_path, tmp_path),
-        lambda **kwargs: None,
-        selection=Selection(),
-        connection=Connection(),
-    )
-    target = {"pid": 1, "processKey": "k", "uin": "12345678"}
-    result = bridge.connect_qq_account(target)
-    assert result["ok"] is True
-    # 列表里点「连接」就等于选定账号，必须先落盘再连接。
-    assert calls == [("choose", "12345678"), ("connect", "12345678")]

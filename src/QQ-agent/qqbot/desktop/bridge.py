@@ -34,7 +34,6 @@ from ..qq.selection import AccountSelection
 from ..qq.snowluma import WEBUI_PORT
 from . import contacts, dependencies
 from .appearance import Appearance, appearance_file
-from .paths import adopt
 from .diagnostics import read_log_entries
 from .resources import ResourceMonitor
 from .storage import StorageManagement
@@ -85,7 +84,7 @@ class DesktopBridge:
         self._appearance = Appearance(appearance_file(paths.runtime))
         self._discovery = discovery
         self._selection = selection or AccountSelection(
-            adopt(paths.runtime / "state" / "account.json", paths.runtime / "account.json")
+            paths.runtime / "state" / "account.json"
         )
         self._connection = connection
         self._messages, self._settings = messages, settings

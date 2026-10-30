@@ -91,8 +91,8 @@ def test_atomic_state_and_live_desktop_information(tmp_path):
     save_state(file, {"phase": "starting"})
     save_state(file, {"phase": "stopped"})
     assert json.loads(file.read_text()) == {"phase": "stopped"}
-    # 目录里除了该文件只有 adopt 建出的分组目录（settings/、state/），没有别的散落物。
-    assert {entry.name for entry in tmp_path.iterdir()} == {"state.json", "settings", "state"}
+    # save_state 自建父目录；其余路径只在真正写入时才落盘，初始化不留散落物。
+    assert {entry.name for entry in tmp_path.iterdir()} == {"state.json"}
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows desktop only")

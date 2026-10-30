@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 from .appearance import Appearance, appearance_file
-from .paths import adopt, save_state
+from .paths import save_state
 
 DEFAULTS = {"trayEnabled": False, "startup": False}
 
@@ -172,9 +172,8 @@ class TrayIcon:
 
 class Residence:
     def __init__(self, paths, *, startup=None, tray_factory=TrayIcon):
-        self._file, self._icon = adopt(
-            paths.runtime / "settings" / "preferences.json", paths.runtime / "preferences.json"
-        ), paths.icon
+        self._file = paths.runtime / "settings" / "preferences.json"
+        self._icon = paths.icon
         self._startup = startup or UserStartup(paths)
         self._factory, self._tray, self._window = tray_factory, None, None
         self._lock = threading.RLock()

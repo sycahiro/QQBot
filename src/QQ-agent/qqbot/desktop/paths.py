@@ -14,40 +14,14 @@ SESSION_DIR = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}")
 LOG_SESSIONS_KEPT = 10
 
 
-def adopt(file: Path, *legacy: Path) -> Path:
-    """新路径不存在而旧路径存在时，把旧文件整体搬过来（老安装无损升级）。
-
-    返回新路径；搬迁失败（例如被占用）也返回新路径，按全新文件处理，旧文件留给用户。
-    """
-    file.parent.mkdir(parents=True, exist_ok=True)
-    if not file.exists():
-        for old in legacy:
-            if old.exists():
-                try:
-                    os.replace(old, file)
-                except OSError:
-                    pass
-                break
-    return file
-
-
 def prune_logs(runtime: Path, keep: int = LOG_SESSIONS_KEPT):
-    """启动会话日志只保留最近 keep 个；并清掉旧版布局的一次性残留。
-
-    - runtime/logs/<会话目录>（旧版把会话目录直接放在 logs 根下）
-    - runtime/logs/snowluma（引擎日志已回归其家目录 data/services/snowluma/logs）
-    """
-    logs = runtime / "logs"
-    if (logs / "snowluma").is_dir():
-        shutil.rmtree(logs / "snowluma", ignore_errors=True)
-    sessions: list[Path] = []
-    for base in (logs, logs / "app"):
-        if base.is_dir():
-            sessions += [
-                entry
-                for entry in base.iterdir()
-                if entry.is_dir() and SESSION_DIR.match(entry.name)
-            ]
+    """启动会话日志只保留最近 keep 个。"""
+    base = runtime / "logs" / "app"
+    if not base.is_dir():
+        return
+    sessions = [
+        entry for entry in base.iterdir() if entry.is_dir() and SESSION_DIR.match(entry.name)
+    ]
     sessions.sort(key=lambda entry: entry.name)
     for stale in sessions[:-keep] if len(sessions) > keep else ():
         shutil.rmtree(stale, ignore_errors=True)

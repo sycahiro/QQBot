@@ -21,7 +21,7 @@ from ..storage.files import (
     remove_files,
     tree_files,
 )
-from .paths import adopt, save_state
+from .paths import save_state
 
 # SnowLuma 引擎日志：snowluma-YYYY-MM-DD.log，滚动后追加 .1/.2。
 ENGINE_LOG = re.compile(r"snowluma-(\d{4}-\d{2}-\d{2})(?:\.\d+)?\.log\Z")
@@ -48,7 +48,7 @@ class StorageManagement:
 
     def _policy(self):
         file = managed(
-            adopt(self._paths.runtime / "settings" / "storage.json", self._paths.runtime / "storage-settings.json"),
+            self._paths.runtime / "settings" / "storage.json",
             self._paths.runtime,
         )
         if not file.exists():
@@ -215,7 +215,9 @@ class StorageManagement:
     def save(self, value):
         with self._lock:
             settings = policy(value)
-            file = managed(self._paths.runtime / "storage-settings.json", self._paths.runtime)
+            file = managed(
+                self._paths.runtime / "settings" / "storage.json", self._paths.runtime
+            )
             save_state(file, settings)
             result = self._prune_logs(settings)
             return {"overview": self.overview(), "cleanup": result}

@@ -13,11 +13,11 @@ from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from .agent.global_settings import GlobalSettings
 from .agent.receiver import Receiver
 from .agent.service import AgentService
-from .desktop.appearance import Appearance
+from .desktop.appearance import Appearance, appearance_file
 from .desktop.bridge import DesktopBridge
 from .desktop.frame import WindowFrame
 from .desktop.frontend import FrontendDocument
-from .desktop.paths import DesktopPaths, adopt, prune_logs, save_state
+from .desktop.paths import DesktopPaths, prune_logs, save_state
 from .desktop.resident import Residence
 from .desktop.windows import SingleInstance, ensure_shortcut, set_application_identity
 from .qq.connection import QqConnection
@@ -110,15 +110,13 @@ def run_primary(paths):
     def update(**changes):
         with state_lock:
             state.update(changes)
-            save_state(adopt(paths.runtime / "state" / "app.json", paths.runtime / "state.json"), state)
+            save_state(paths.runtime / "state" / "app.json", state)
 
     update()
     prune_logs(paths.runtime)
     document = FrontendDocument(paths)
     discovery = SnowLumaDiscovery(paths)
-    selection = AccountSelection(
-        adopt(paths.runtime / "state" / "account.json", paths.runtime / "account.json")
-    )
+    selection = AccountSelection(paths.runtime / "state" / "account.json")
     database = connection = agent = None
     stopped = threading.Event()
     window = None
@@ -161,9 +159,7 @@ def run_primary(paths):
         receiver = Receiver(settings, messages, agent)
         set_application_identity()
         ensure_shortcut(paths)
-        page = document.prepare(Appearance(adopt(
-            paths.runtime / "settings" / "appearance.json", paths.runtime / "appearance.json"
-        )).read())
+        page = document.prepare(Appearance(appearance_file(paths.runtime)).read())
         residence = Residence(paths)
         frame = WindowFrame()
         update(frontendPid=None, phase="opening")
@@ -215,7 +211,7 @@ def run_primary(paths):
             gui="edgechromium",
             private_mode=False,
             http_server=False,
-            storage_path=str(adopt(paths.webview, paths.runtime / "webview-profile")),
+            storage_path=str(paths.webview),
             debug=False,
             icon=str(paths.icon),
         )

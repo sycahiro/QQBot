@@ -10,8 +10,6 @@ import uuid
 from ctypes import byref, wintypes
 from pathlib import Path
 
-from .paths import adopt
-
 logger = logging.getLogger(__name__)
 
 _CLSID_SHELL_LINK = "00021401-0000-0000-C000-000000000046"
@@ -62,9 +60,7 @@ def ensure_shortcut(paths, programs=None):
         "icon": str(paths.icon),
         "aumid": "QQBot.Desktop",
     }
-    marker = adopt(
-        paths.runtime / "state" / "taskbar-shortcut.json", paths.runtime / "taskbar-shortcut.json"
-    )
+    marker = paths.runtime / "state" / "taskbar-shortcut.json"
     try:
         if link.is_file() and json.loads(marker.read_text(encoding="utf-8")) == wanted:
             return link
@@ -72,7 +68,7 @@ def ensure_shortcut(paths, programs=None):
         pass
     try:
         _write_shortcut(link, wanted)
-        paths.runtime.mkdir(parents=True, exist_ok=True)
+        marker.parent.mkdir(parents=True, exist_ok=True)
         marker.write_text(json.dumps(wanted), encoding="utf-8")
     except OSError as error:
         logger.warning("注册任务栏身份快捷方式失败：%s", error)

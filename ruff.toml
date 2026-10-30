@@ -1,0 +1,24 @@
+# Ruff 配置：与 ruff 0.17+ 的扩展默认规则集对齐。
+# 未显式指定 select，跟随当前安装的 ruff 默认值；升级 ruff 后如新增报错按需处理。
+line-length = 120
+
+[lint]
+ignore = [
+    # 输入校验按产品语义抛 ValueError（UI 直接展示消息、上层按 ValueError 捕获），不改为 TypeError。
+    "TRY004",
+    # 包名 QQBot / 模块名由项目命名决定，不使用全小写 snake_case。
+    "N999",
+]
+
+[lint.per-file-ignores]
+# 包入口的显式 re-export（from .x import y as y）是有意为之。
+"src/QQBot/__init__.py" = ["PLC0414"]
+"src/QQBot/agent/__init__.py" = ["PLC0414"]
+"src/QQBot/desktop/__init__.py" = ["PLC0414"]
+"src/QQBot/qq/__init__.py" = ["PLC0414"]
+"src/QQBot/storage/__init__.py" = ["PLC0414"]
+# done()/memory.append 均在同一循环迭代内立即调用，闭包不会读到下一次迭代的值。
+"src/QQBot/storage/migration.py" = ["B023"]
+# 浏览器/桥接边界故意宽捕获：外部网页与第三方异常不可枚举，失败转结构化错误或尽力清理。
+"src/QQBot/agent/web_browser.py" = ["BLE001"]
+"src/QQBot/desktop/bridge.py" = ["BLE001"]

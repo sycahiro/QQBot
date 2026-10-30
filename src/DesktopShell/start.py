@@ -12,10 +12,10 @@ if sys.platform == "win32":
         os.environ["PATH"] = str(library_bin) + os.pathsep + os.environ.get("PATH", "")
 
 # Native libraries must be discoverable before importing application modules.
-# 壳模块只持有入口与前端；py 后端包（qqbot）在 QQ-agent 模块里。
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "QQ-agent"))
+# 壳模块只持有入口与前端；后端包 QQBot 与本目录同在 src/ 下。
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from qqbot.main import main  # noqa: E402
+from QQBot.main import main
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -112,9 +112,10 @@ SnowLuma WebUI 的登录密码由本项目首次启动时自动生成，**保存
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/QQ-agent/` | Python 机器人后端、存储和测试 |
+| `src/QQBot/` | Python 机器人后端包（业务、QQ 连接、模型调度、存储） |
 | `src/DesktopShell/` | pywebview 桌面入口、React 前端和测试 |
 | `src/SnowLuma/` | **手动安装**的独立 SnowLuma 运行时（见安装教程第 2 步），不入库 |
+| `tests/` | 后端 pytest 测试，与源码分离 |
 | `Install.bat` | 项目依赖安装入口 |
 | `QQBot.bat` | 带控制台的启动入口 |
 | `tools/requirements.txt` | Python 依赖清单 |
@@ -148,8 +149,7 @@ data/services/snowluma/             SnowLuma 引擎的家目录（引擎自己�
 先运行安装脚本准备依赖。在项目根目录打开 PowerShell，运行后端测试：
 
 ```powershell
-cd src\QQ-agent
-..\..\tools\python\python.exe -m pytest -q
+tools\python\python.exe -m pytest -q tests
 ```
 
 运行前端类型检查和测试：

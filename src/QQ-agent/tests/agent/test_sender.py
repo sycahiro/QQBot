@@ -284,10 +284,16 @@ def test_face_codes_are_split_into_onebot_face_segments():
         {"type": "face", "data": {"id": "449"}},
     ]
     assert face_segments("[CQ:face,id=13]") == [{"type": "face", "data": {"id": "13"}}]
-    # 未知名字、表外编号和非数字写法不是有效表情码，按普通文本原样发送。
-    assert face_segments("[表情:狗头] [CQ:face, id=13] [CQ:face,id=999] [表情:999]") == [
-        {"type": "text", "data": {"text": "[表情:狗头] [CQ:face, id=13] [CQ:face,id=999] [表情:999]"}}
+    # 未知名字、表外编号直接丢掉（编造的表情不能原样发出）；非表情写法和相邻文本保留。
+    assert face_segments("才不信呢 [表情:傲娇]") == [
+        {"type": "text", "data": {"text": "才不信呢 "}}
     ]
+    assert face_segments("[表情:狗头] [CQ:face, id=13] [CQ:face,id=999] [表情:999]") == [
+        {"type": "text", "data": {"text": " [CQ:face, id=13]  "}}
+    ]
+    # 整条只有一个编造表情时没有可发内容，直接报错。
+    with pytest.raises(ValueError, match="为空"):
+        face_segments("[表情:傲娇]")
 
 
 def test_face_messages_keep_receipt_dedupe_and_archive_text(sender):

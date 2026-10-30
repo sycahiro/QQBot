@@ -25,7 +25,8 @@ def _validate_model_text(text):
 
 
 # QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
-# named [表情:呲牙] (resolved via the face table). Unknown names stay literal.
+# named [表情:呲牙] (resolved via the face table). Unknown tokens are dropped:
+# sending guessed names verbatim reads as broken output.
 FACE_PATTERN = re.compile(
     r"\[(?:CQ:face,id=|表情:)(\d{1,3}|[a-zA-Z0-9+·!\u4e00-\u9fff]{1,10})\]", re.I
 )
@@ -37,22 +38,17 @@ def face_segments(text):
     pos = 0
     for match in FACE_PATTERN.finditer(text):
         token = match.group(1)
-        if match.start() > pos:
-            segments.append({"type": "text", "data": {"text": text[pos : match.start()]}})
         if token.isdigit():
             # Numeric ids must come from the face table; never trust guesses.
             face_id = int(token) if int(token) in FACES else None
         else:
             face_id = NAMES.get(token)
-        if face_id is None:
-            # Unknown name: keep the original bracketed form visible as text.
-            if segments and segments[-1].get("type") == "text":
-                segments[-1]["data"]["text"] += match.group(0)
-            else:
-                segments.append({"type": "text", "data": {"text": match.group(0)}})
-        else:
-            segments.append({"type": "face", "data": {"id": str(face_id)}})
+        # Only the token itself may be skipped; surrounding text always stays.
+        if match.start() > pos:
+            segments.append({"type": "text", "data": {"text": text[pos : match.start()]}})
         pos = match.end()
+        if face_id is not None:
+            segments.append({"type": "face", "data": {"id": str(face_id)}})
     if pos < len(text):
         segments.append({"type": "text", "data": {"text": text[pos:]}})
     merged = []

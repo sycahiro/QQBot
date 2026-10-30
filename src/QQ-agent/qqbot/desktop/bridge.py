@@ -1226,9 +1226,9 @@ class DesktopBridge:
             "python": "https://www.python.org/",
             "node": "https://nodejs.org/",
             "snowluma": "https://snowluma.github.io/",
-            "author": "https://github.com/jiuyv",
-            "repo": "https://github.com/jiuyv/QQBot",
-            "issues": "https://github.com/jiuyv/QQBot/issues",
+            "author": "https://github.com/sycahiro",
+            "repo": "https://github.com/sycahiro/QQBot",
+            "issues": "https://github.com/sycahiro/QQBot/issues",
         }
 
         def launch():

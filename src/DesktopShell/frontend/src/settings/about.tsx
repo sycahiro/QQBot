@@ -114,7 +114,7 @@ export function About({ info }: { info: DesktopInfo | null }) {
                 </div>
                 <div className="about-runtime-card">
                     <div>
-                        <strong>jiuyv</strong>
+                        <strong>sycahiro</strong>
                         <span>QQBot 作者与维护者</span>
                     </div>
                     <p>

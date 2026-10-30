@@ -18,9 +18,14 @@ def sender(tmp_path):
     class Connection:
         def __init__(self):
             self.calls = []
+            self.recalls = []
 
         def invoke(self, action, params, *, expected_account):
-            assert action == "send_private_msg" and expected_account == ACCOUNT
+            assert expected_account == ACCOUNT
+            if action == "delete_msg":
+                self.recalls.append(params)
+                return {"status": "ok", "data": None}
+            assert action == "send_private_msg"
             self.calls.append(params)
             return {"status": "ok", "data": {"message_id": -len(self.calls)}}
 
@@ -294,3 +299,28 @@ def test_face_messages_keep_receipt_dedupe_and_archive_text(sender):
     # 相同正文在本次处理内去重，回执为空。
     result = send.send(ACCOUNT, KEY, {"messages": ["早 [表情:13]"]}, 0, session, lambda _: None)
     assert result["deduped"] == 1 and result["sent"] == 0
+
+
+def test_recall_withdraws_own_receipt_and_marks_archive(sender):
+    send, connection, messages, session = sender
+    send.send(ACCOUNT, KEY, {"messages": ["发错的内容"]}, 0, session, lambda _: None)
+    mid = session["sent"][0]["messageId"]
+    result = send.recall(ACCOUNT, KEY, {"messageId": mid}, 0, session, lambda _: None)
+    assert result == {"recalled": True, "messageId": mid}
+    assert connection.recalls == [{"message_id": mid}]
+    assert session["sent"][0]["recalled"] is True
+    assert messages.messages(ACCOUNT, KEY)["items"][0]["withdrawn"] is True
+
+
+def test_recall_dedupes_and_rejects_foreign_message_ids(sender):
+    send, connection, _, session = sender
+    # 只能撤回本次处理中自己发出的消息。
+    with pytest.raises(ValueError, match="本次处理"):
+        send.recall(ACCOUNT, KEY, {"messageId": 999}, 0, session, lambda _: None)
+    send.send(ACCOUNT, KEY, {"messages": ["又发错了"]}, 0, session, lambda _: None)
+    mid = session["sent"][0]["messageId"]
+    send.recall(ACCOUNT, KEY, {"messageId": str(mid)}, 0, session, lambda _: None)
+    # 同一条消息重复撤回去重，不再调用 QQ。
+    result = send.recall(ACCOUNT, KEY, {"messageId": mid}, 0, session, lambda _: None)
+    assert result["deduped"] is True
+    assert len(connection.recalls) == 1

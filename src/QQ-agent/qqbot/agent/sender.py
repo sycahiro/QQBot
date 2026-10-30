@@ -308,6 +308,37 @@ class Sender:
             )
             return {"poked": True, "deduped": False, "targetUserId": target}
 
+    def recall(self, account, key, args, epoch, session, persist):
+        """撤回本轮处理中自己发出的一条消息；只作纠错用，不提供翻旧账能力。"""
+        chat_key(key)
+        if set(args) - {"messageId"}:
+            raise ValueError("撤回工具不接受其他参数")
+        mid = numeric_id(args.get("messageId"))
+        if not mid:
+            raise ValueError("请提供要撤回的消息编号")
+        receipt = next(
+            (item for item in session["sent"] if item.get("messageId") == mid), None
+        )
+        if receipt is None:
+            raise ValueError("只能撤回本次处理中自己发出的消息")
+        if receipt.get("recalled"):
+            return {"recalled": True, "messageId": mid, "deduped": True}
+        with self._dispatch_lock:
+            if not self._permit(account, key, epoch):
+                raise DeliveryError("处理已停止，未执行撤回")
+            try:
+                result = self._connection.invoke(
+                    "delete_msg", {"message_id": mid}, expected_account=account
+                )
+            except EngineError as error:
+                raise DeliveryError("撤回结果未确认，消息可能仍在") from error
+            if result.get("status") != "ok":
+                raise DeliveryError("QQ 未确认撤回成功，消息可能仍在")
+            receipt["recalled"] = True
+            persist(session)
+            self._messages.recall(account, key, mid)
+        return {"recalled": True, "messageId": mid}
+
     def _deliver(
         self,
         account,

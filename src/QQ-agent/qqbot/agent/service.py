@@ -735,6 +735,7 @@ class AgentService:
         try:
             finished = False
             poke_calls = 0
+            recall_calls = 0
             rescued = False
             rounds = config["api"]["maxRounds"]
             for round_index in range(rounds):
@@ -816,6 +817,11 @@ class AgentService:
                                 raise ValueError("每次处理最多拍一拍一次")
                             poke_calls += 1
                             result = await self._poke(account, key, args, epoch, session)
+                        elif name == "recall_message":
+                            if recall_calls >= 1:
+                                raise ValueError("每次处理最多撤回一次")
+                            recall_calls += 1
+                            result = await self._recall(account, key, args, epoch, session)
                         elif name == "finish":
                             if set(args) - {"summary"} or not isinstance(args.get("summary"), str):
                                 raise ValueError("结束说明格式无效")
@@ -1038,6 +1044,19 @@ class AgentService:
         if user not in known:
             raise ValueError("请使用当前聊天记录中已确认的成员 QQ 号")
         return self._memory.append(account, key, user, args.get("target", ""), args.get("content"))
+
+    async def _recall(self, account, key, args, epoch, session):
+        future = self._loop.run_in_executor(
+            self._executor,
+            self._sender.recall,
+            account,
+            key,
+            args,
+            epoch,
+            session,
+            self._sessions.save,
+        )
+        return await self._await_native(future)
 
     async def _poke(self, account, key, args, epoch, session):
         future = self._loop.run_in_executor(

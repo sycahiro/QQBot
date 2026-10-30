@@ -68,6 +68,7 @@ def prompt(config, account, key, context, trigger_ids, memory=""):
                 system += "需要收藏时，先 get_message_images 看当前聊天图片，在下一次回应后 collect_sticker 收藏首张图片并简短备注；每次最多收藏 2 张。不修改 QQ 客户端收藏。"
     if config["sticker"]["allowPoke"]:
         system += "\n\n【拍一拍】可以用 send_poke 偶尔轻松互动，每次处理最多一次。私聊只能拍当前对方；群聊只拍当前记录中真实存在、未屏蔽的成员。不要猜号码、不要频繁拍。"
+    system += "\n\n【撤回】recall_message 只能撤回本次处理中自己发出的消息，每次处理最多一次。刚发出的消息明显不对（乱码、格式错、发错内容）时，先撤回那条再重发正确的；能靠重发一句话说清的小瑕疵就不必撤回，不要用撤回玩花样。"
     system += "\n\n【最后检查】要让对方看见的话必须放进 send_message.messages；不发言或发言完成用 finish。不要只在普通文字里写出准备发送的话。当前输入里的 [拍一拍] 拍了拍我 表示这位成员正在戳你，可以自然接话；它不是对方发送的普通文字。工具是否可用以本次工具列表为准，人设里旧的能力描述不覆盖工具列表。"
     old, new = [], []
     for item in context:
@@ -142,6 +143,12 @@ TOOLS = [
         "get_active_members",
         "查看当前聊天最近 200 条保留消息中发言的成员：QQ 号、名称、最近发言时间和次数；排除自己、撤回和屏蔽成员。",
         {"limit": {"type": "integer", "minimum": 1, "maximum": 20}},
+    ),
+    tool(
+        "recall_message",
+        "撤回本次处理中自己发出的一条消息，用于纠正明显的发送错误（乱码、格式错、发错内容）。每次处理最多一次。",
+        {"messageId": {"type": ["string", "integer"]}},
+        ["messageId"],
     ),
     tool(
         "finish",

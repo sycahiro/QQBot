@@ -119,7 +119,7 @@ def test_invalid_global_write_is_atomic_and_host_change_cannot_borrow_a_key(tmp_
             "api": {"baseUrl": "https://a.test/v1", "apiKey": "secret", "model": "test"},
         },
     )
-    previous = (tmp_path / "global-settings.json").read_bytes()
+    previous = (tmp_path / "settings" / "global.json").read_bytes()
     with pytest.raises(ValueError):
         shared.profile(
             "global",
@@ -132,7 +132,7 @@ def test_invalid_global_write_is_atomic_and_host_change_cannot_borrow_a_key(tmp_
         )
     with pytest.raises(ValueError):
         shared.save("global", {"api": {"maxRounds": 0}})
-    assert (tmp_path / "global-settings.json").read_bytes() == previous
+    assert (tmp_path / "settings" / "global.json").read_bytes() == previous
     with pytest.raises(ValueError):
         shared.save(A, {"api": {}})
 
@@ -171,14 +171,14 @@ def test_media_save_updates_only_active_profile_and_rejects_stale_profile(tmp_pa
         shared.profile(
             "global", "save", {"id": None, "name": "第二个模型", "api": {"model": "second"}}
         )
-        previous = (tmp_path / "global-settings.json").read_bytes()
+        previous = (tmp_path / "settings" / "global.json").read_bytes()
         for patch in [
             {"media": {"vision": False}, "profileId": active},
             {"media": {"apiKey": "other"}, "profileId": shared.read()["activeProfileId"]},
             {"media": {"video": False}, "profileId": shared.read()["activeProfileId"]},
         ]:
             assert not bridge.save_global_settings(patch)["ok"]
-            assert (tmp_path / "global-settings.json").read_bytes() == previous
+            assert (tmp_path / "settings" / "global.json").read_bytes() == previous
         assert not (tmp_path / "accounts").exists()
     finally:
         bridge._reviews.close()
@@ -188,9 +188,10 @@ def test_owner_qq_roundtrip_and_legacy_file_without_it(tmp_path):
     globals_ = GlobalSettings(tmp_path)
     globals_.save("global", {"ownerQQ": "23456789"})
     assert GlobalSettings(tmp_path).read()["ownerQQ"] == "23456789"
-    # 旧版本文件没有 ownerQQ 字段也能读取。
-    legacy = json.loads((tmp_path / "global-settings.json").read_text(encoding="utf-8"))
+    # 旧版本布局（runtime/global-settings.json）没有 ownerQQ 字段也能读取：新实例自动迁移旧文件。
+    legacy = json.loads((tmp_path / "settings" / "global.json").read_text(encoding="utf-8"))
     legacy.pop("ownerQQ", None)
+    (tmp_path / "settings" / "global.json").unlink()
     (tmp_path / "global-settings.json").write_text(
         json.dumps(legacy, ensure_ascii=False), encoding="utf-8"
     )

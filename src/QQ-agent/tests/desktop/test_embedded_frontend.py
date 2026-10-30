@@ -81,16 +81,17 @@ def test_actual_compile_process_never_listens_and_writes_no_dist(tmp_path):
 
 
 def test_theme_is_local_validated_and_survives_reopen_without_browser_storage(tmp_path):
-    appearance = Appearance(tmp_path)
+    file = tmp_path / "settings" / "appearance.json"
+    appearance = Appearance(file)
     assert appearance.read() == "system"
     bridge = DesktopBridge(DesktopPaths(ROOT, tmp_path), lambda **_: None)
     assert bridge.save_theme("dark") == {"ok": True, "theme": "dark"}
-    assert Appearance(tmp_path).read() == "dark"
+    assert Appearance(file).read() == "dark"
     for invalid in [None, True, "../outside", {}, "blue"]:
         assert not bridge.save_theme(invalid)["ok"]
         assert appearance.read() == "dark"
     assert bridge.save_theme("system")["ok"]
-    assert json.loads((tmp_path / "appearance.json").read_text()) == {"theme": "system"}
+    assert json.loads(file.read_text()) == {"theme": "system"}
     bridge._reviews.close()
 
 
@@ -153,7 +154,7 @@ def test_main_passes_html_and_disables_framework_server(tmp_path, monkeypatch):
     assert records["url"] is None and records["html"].startswith("<!doctype html>")
     assert records["closed"] and records["started"]
     assert (records["width"], records["height"]) == (1520, 980)
-    state = json.loads((tmp_path / "state.json").read_text())
+    state = json.loads((tmp_path / "state" / "app.json").read_text())
     assert (
         state["phase"] == "stopped" and state["frontendMode"] == "embedded" and "port" not in state
     )

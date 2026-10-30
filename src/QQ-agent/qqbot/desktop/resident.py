@@ -10,8 +10,8 @@ import threading
 import time
 from pathlib import Path
 
-from .appearance import Appearance
-from .paths import save_state
+from .appearance import Appearance, appearance_file
+from .paths import adopt, save_state
 
 DEFAULTS = {"trayEnabled": False, "startup": False}
 
@@ -172,7 +172,9 @@ class TrayIcon:
 
 class Residence:
     def __init__(self, paths, *, startup=None, tray_factory=TrayIcon):
-        self._file, self._icon = paths.runtime / "preferences.json", paths.icon
+        self._file, self._icon = adopt(
+            paths.runtime / "settings" / "preferences.json", paths.runtime / "preferences.json"
+        ), paths.icon
         self._startup = startup or UserStartup(paths)
         self._factory, self._tray, self._window = tray_factory, None, None
         self._lock = threading.RLock()
@@ -183,7 +185,7 @@ class Residence:
         self._prompt_checking = False
         self._ui_ready = False
         self._prompt_thread = None
-        self._appearance = Appearance(paths.runtime)
+        self._appearance = Appearance(appearance_file(paths.runtime))
         self._options = dict(DEFAULTS)
         if self._file.exists():
             try:

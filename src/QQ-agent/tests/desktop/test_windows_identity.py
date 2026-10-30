@@ -32,7 +32,7 @@ def test_shortcut_registers_with_aumid_and_is_idempotent(paths, tmp_path):
 
     link = ensure_shortcut(paths, programs=programs)
     assert link is not None and link.is_file()
-    marker = json.loads((paths.runtime / "taskbar-shortcut.json").read_text(encoding="utf-8"))
+    marker = json.loads((paths.runtime / "state" / "taskbar-shortcut.json").read_text(encoding="utf-8"))
     assert marker["aumid"] == "QQBot.Desktop"
     assert marker["target"].endswith("pythonw.exe") or marker["target"].endswith("python.exe")
     assert '-B "' in marker["args"]
@@ -50,5 +50,5 @@ def test_shortcut_rebuilds_when_entry_changes(paths, tmp_path):
 
     paths.entry = tmp_path / "moved" / "start.py"
     assert ensure_shortcut(paths, programs=programs) is not None
-    marker = json.loads((paths.runtime / "taskbar-shortcut.json").read_text(encoding="utf-8"))
+    marker = json.loads((paths.runtime / "state" / "taskbar-shortcut.json").read_text(encoding="utf-8"))
     assert str(paths.entry) in marker["args"]

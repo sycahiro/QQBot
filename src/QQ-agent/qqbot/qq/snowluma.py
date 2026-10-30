@@ -144,7 +144,6 @@ class SnowLumaService:
         home = self._paths.snowluma_home
         (home / "config").mkdir(parents=True, exist_ok=True)
         self._paths.snowluma_data.mkdir(parents=True, exist_ok=True)
-        (self._paths.runtime / "logs" / "snowluma").mkdir(parents=True, exist_ok=True)
         # 服务凭据：首次生成后固定，重启 SnowLuma 也沿用同一密码。
         secret_file = self._paths.runtime / "secrets" / "snowluma-service.json"
         if not secret_file.exists():
@@ -188,7 +187,8 @@ class SnowLumaService:
             raise EngineError("MISSING_NODE", "缺少 Node 运行工具（tools/node）")
         if not entry.is_file():
             raise EngineError("MISSING_ENGINE", "缺少 SnowLuma 服务入口（src/SnowLuma）")
-        log_directory = self._paths.runtime / "logs" / "snowluma"
+        # 日志不传 SNOWLUMA_LOG_DIR：引擎默认写 cwd 下的 logs/（即 data/services/snowluma/logs），
+        # 并自带按天分文件、轮转与总量上限清理；runtime/logs 只放本应用自己的日志。
         env = os.environ | {
             "SNOWLUMA_WEBUI_BOOTSTRAP_PASSWORD": self._password,
             "SNOWLUMA_WEBUI_HOST": "127.0.0.1",
@@ -199,7 +199,6 @@ class SnowLumaService:
             "SNOWLUMA_HOOK_AUTOLOAD": "0",
             "SNOWLUMA_ACCEPT_EULA": "0",
             "SNOWLUMA_ACCEPT_PRIVACY": "0",
-            "SNOWLUMA_LOG_DIR": str(log_directory),
             "QQBOT_MANAGED_SNOW": "1",
         }
         self._child = subprocess.Popen(

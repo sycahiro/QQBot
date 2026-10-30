@@ -46,10 +46,10 @@ def test_global_media_bindings_survive_chat_switch_and_profile_store_never_activ
     )
     with pytest.raises(ValueError, match="图片理解"):
         shared.profile("global", "delete", {"id": b})
-    before = (tmp_path / "global-settings.json").read_bytes()
+    before = (tmp_path / "settings" / "global.json").read_bytes()
     with pytest.raises(ValueError):
         shared.save("global", {"mediaOptions": {"imageProfileId": "missing"}})
-    assert (tmp_path / "global-settings.json").read_bytes() == before
+    assert (tmp_path / "settings" / "global.json").read_bytes() == before
     shared.save("global", {"mediaOptions": {"imageProfileId": ""}})
     assert resolve_media(shared.read())["model"] == "other"
 
@@ -57,9 +57,9 @@ def test_global_media_bindings_survive_chat_switch_and_profile_store_never_activ
 def test_missing_media_options_are_rejected_instead_of_rebuilt(tmp_path):
     shared = GlobalSettings(tmp_path)
     add(shared, "chat", activate=True)
-    raw = json.loads((tmp_path / "global-settings.json").read_text())
+    raw = json.loads((tmp_path / "settings" / "global.json").read_text())
     raw.pop("mediaOptions")
-    (tmp_path / "global-settings.json").write_text(json.dumps(raw), encoding="utf-8")
+    (tmp_path / "settings" / "global.json").write_text(json.dumps(raw), encoding="utf-8")
     with pytest.raises(ValueError, match="全局设置无法读取"):
         shared.read()
 

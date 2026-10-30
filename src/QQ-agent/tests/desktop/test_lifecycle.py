@@ -91,7 +91,8 @@ def test_atomic_state_and_live_desktop_information(tmp_path):
     save_state(file, {"phase": "starting"})
     save_state(file, {"phase": "stopped"})
     assert json.loads(file.read_text()) == {"phase": "stopped"}
-    assert list(tmp_path.iterdir()) == [file]
+    # 目录里除了该文件只有 adopt 建出的分组目录（settings/、state/），没有别的散落物。
+    assert {entry.name for entry in tmp_path.iterdir()} == {"state.json", "settings", "state"}
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows desktop only")
@@ -133,7 +134,7 @@ def test_startup_failure_remains_failed_and_cleanup_still_runs(tmp_path, monkeyp
     monkeypatch.setattr(application, "FrontendDocument", FailingFrontend)
     with pytest.raises(RuntimeError, match="compile failed"):
         application.run_primary(DesktopPaths(ROOT, tmp_path))
-    state = json.loads((tmp_path / "state.json").read_text())
+    state = json.loads((tmp_path / "state" / "app.json").read_text())
     assert state["phase"] == "failed" and state["uiReady"] is False
     assert state["frontendPid"] is None and "compile failed" in state["error"]
     assert state["frontendMode"] == "embedded" and "port" not in state

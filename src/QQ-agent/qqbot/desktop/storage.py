@@ -21,7 +21,7 @@ from ..storage.files import (
     remove_files,
     tree_files,
 )
-from .paths import save_state
+from .paths import adopt, save_state
 
 # SnowLuma 引擎日志：snowluma-YYYY-MM-DD.log，滚动后追加 .1/.2。
 ENGINE_LOG = re.compile(r"snowluma-(\d{4}-\d{2}-\d{2})(?:\.\d+)?\.log\Z")
@@ -47,7 +47,10 @@ class StorageManagement:
         self._next_sweep = 0
 
     def _policy(self):
-        file = managed(self._paths.runtime / "storage-settings.json", self._paths.runtime)
+        file = managed(
+            adopt(self._paths.runtime / "settings" / "storage.json", self._paths.runtime / "storage-settings.json"),
+            self._paths.runtime,
+        )
         if not file.exists():
             return dict(DEFAULT_POLICY)
         if file_size(file, self._paths.runtime) > 4096:
@@ -60,36 +63,38 @@ class StorageManagement:
     def _log_groups(self):
         root = self._paths.runtime
         groups = []
-        for folder in children(root / "logs", root):
-            if not LOG_SESSION.fullmatch(folder.name):
-                continue
-            managed(folder, root)
-            if not folder.is_dir():
-                continue
-            files = [folder / name for name in sorted(LOG_FILES) if (folder / name).exists()]
-            size = sum(file_size(file, root) for file in files)
-            # Launch date, rather than latest write time, defines retention.
-            try:
-                started = datetime.strptime(
-                    folder.name.rsplit("-", 1)[0], "%Y-%m-%d_%H-%M-%S.%f"
-                ).timestamp()
-            except ValueError:
-                continue  # Unrecognized folders are outside the log policy.
-            groups.append(
-                {
-                    "folder": folder,
-                    "files": files,
-                    "bytes": size,
-                    "started": started,
-                    "active": folder.name == self._paths.log_session,
-                }
-            )
+        # 新布局在 logs/app 下；旧布局把会话目录直接放在 logs 根下，同样纳入统计与保留策略。
+        for base in (root / "logs", root / "logs" / "app"):
+            for folder in children(base, root):
+                if not LOG_SESSION.fullmatch(folder.name):
+                    continue
+                managed(folder, root)
+                if not folder.is_dir():
+                    continue
+                files = [folder / name for name in sorted(LOG_FILES) if (folder / name).exists()]
+                size = sum(file_size(file, root) for file in files)
+                # Launch date, rather than latest write time, defines retention.
+                try:
+                    started = datetime.strptime(
+                        folder.name.rsplit("-", 1)[0], "%Y-%m-%d_%H-%M-%S.%f"
+                    ).timestamp()
+                except ValueError:
+                    continue  # Unrecognized folders are outside the log policy.
+                groups.append(
+                    {
+                        "folder": folder,
+                        "files": files,
+                        "bytes": size,
+                        "started": started,
+                        "active": folder.name == self._paths.log_session,
+                    }
+                )
         return sorted(groups, key=lambda item: (item["started"], item["folder"].name))
 
     def _engine_files(self):
         """SnowLuma 引擎日志按天滚动，文件名里的日期决定保留；当天的视为活跃。"""
         root = self._paths.runtime
-        folder = root / "logs" / "snowluma"
+        folder = self._paths.snowluma_home / "logs"
         today = datetime.now().strftime("%Y-%m-%d")
         items = []
         for file in children(folder, root):

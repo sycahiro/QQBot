@@ -10,6 +10,8 @@ import uuid
 from ctypes import byref, wintypes
 from pathlib import Path
 
+from .paths import adopt
+
 logger = logging.getLogger(__name__)
 
 _CLSID_SHELL_LINK = "00021401-0000-0000-C000-000000000046"
@@ -60,7 +62,9 @@ def ensure_shortcut(paths, programs=None):
         "icon": str(paths.icon),
         "aumid": "QQBot.Desktop",
     }
-    marker = paths.runtime / "taskbar-shortcut.json"
+    marker = adopt(
+        paths.runtime / "state" / "taskbar-shortcut.json", paths.runtime / "taskbar-shortcut.json"
+    )
     try:
         if link.is_file() and json.loads(marker.read_text(encoding="utf-8")) == wanted:
             return link

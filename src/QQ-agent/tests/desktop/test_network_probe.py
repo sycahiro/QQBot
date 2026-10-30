@@ -36,7 +36,7 @@ def test_probe_uses_actual_query_and_returns_results_without_enabling_or_saving(
         result["ok"] and result["success"] and result["result"]["results"][0]["title"] == "真实结果"
     )
     assert calls[0][1] == "想查的实际关键词" and calls[0][0]["maxResults"] == 3
-    assert settings.values() == before and not (path / "global-settings.json").exists()
+    assert settings.values() == before and not (path / "settings" / "global.json").exists()
 
 
 def test_probe_retains_each_failed_stage_instead_of_generic_notice(bridge):

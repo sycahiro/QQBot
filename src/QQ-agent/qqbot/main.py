@@ -17,7 +17,7 @@ from .desktop.appearance import Appearance
 from .desktop.bridge import DesktopBridge
 from .desktop.frame import WindowFrame
 from .desktop.frontend import FrontendDocument
-from .desktop.paths import DesktopPaths, save_state
+from .desktop.paths import DesktopPaths, adopt, prune_logs, save_state
 from .desktop.resident import Residence
 from .desktop.windows import SingleInstance, ensure_shortcut, set_application_identity
 from .qq.connection import QqConnection
@@ -110,12 +110,15 @@ def run_primary(paths):
     def update(**changes):
         with state_lock:
             state.update(changes)
-            save_state(paths.runtime / "state.json", state)
+            save_state(adopt(paths.runtime / "state" / "app.json", paths.runtime / "state.json"), state)
 
     update()
+    prune_logs(paths.runtime)
     document = FrontendDocument(paths)
     discovery = SnowLumaDiscovery(paths)
-    selection = AccountSelection(paths.runtime / "account.json")
+    selection = AccountSelection(
+        adopt(paths.runtime / "state" / "account.json", paths.runtime / "account.json")
+    )
     database = connection = agent = None
     stopped = threading.Event()
     window = None
@@ -158,7 +161,9 @@ def run_primary(paths):
         receiver = Receiver(settings, messages, agent)
         set_application_identity()
         ensure_shortcut(paths)
-        page = document.prepare(Appearance(paths.runtime).read())
+        page = document.prepare(Appearance(adopt(
+            paths.runtime / "settings" / "appearance.json", paths.runtime / "appearance.json"
+        )).read())
         residence = Residence(paths)
         frame = WindowFrame()
         update(frontendPid=None, phase="opening")
@@ -210,7 +215,7 @@ def run_primary(paths):
             gui="edgechromium",
             private_mode=False,
             http_server=False,
-            storage_path=str(paths.runtime / "webview-profile"),
+            storage_path=str(adopt(paths.webview, paths.runtime / "webview-profile")),
             debug=False,
             icon=str(paths.icon),
         )

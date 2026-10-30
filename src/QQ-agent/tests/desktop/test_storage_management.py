@@ -26,7 +26,7 @@ def stores(tmp_path, monkeypatch):
     # snowluma_data 锚定真实根目录（生产数据库位置）；测试必须隔离到 tmp，避免污染运行数据。
     monkeypatch.setattr(DesktopPaths, "snowluma_home", property(lambda self: tmp_path / "snowluma-home"))
     monkeypatch.setattr(
-        DesktopPaths, "snowluma_data", property(lambda self: self.snowluma_home / "default" / "data")
+        DesktopPaths, "snowluma_data", property(lambda self: self.snowluma_home / "data")
     )
     accounts = AccountStorage(tmp_path / "accounts")
     connection = QqConnection(paths, None, None, engine_factory=lambda _: None)
@@ -193,7 +193,7 @@ def test_retention_applies_on_sweep_without_rewriting_settings(stores):
     current = log(paths, paths.log_session)
     manager.sweep()
     assert not old.exists() and current.exists()
-    assert not (paths.runtime / "storage-settings.json").exists()
+    assert not (paths.runtime / "settings" / "storage.json").exists()
 
 
 def test_current_launch_survives_over_quota(stores):
@@ -205,7 +205,7 @@ def test_current_launch_survives_over_quota(stores):
 
 def test_engine_logs_are_counted_and_pruned_without_touching_today(stores):
     paths, _, _, manager = stores
-    folder = paths.runtime / "logs" / "snowluma"
+    folder = paths.snowluma_home / "logs"
     folder.mkdir(parents=True)
     old = folder / "snowluma-2020-01-01.log"
     old.write_bytes(b"y" * 64)
@@ -263,7 +263,7 @@ def test_invalid_policy_never_deletes_or_saves(stores, value):
     old = log(paths, "2020-01-01_00-00-00.000001-1")
     with pytest.raises(ValueError):
         manager.save(value)
-    assert old.exists() and not (paths.runtime / "storage-settings.json").exists()
+    assert old.exists() and not (paths.runtime / "settings" / "storage.json").exists()
 
 
 def test_database_hardlink_and_account_junction_rejected_without_touching_target(stores, tmp_path):
@@ -354,7 +354,7 @@ def test_forged_cleanup_requests_do_not_change_data(stores, cleanup_request):
 def test_engine_retention_is_independent_of_application_retention(stores):
     paths, _, _, manager = stores
     old_app = log(paths, "2020-01-01_00-00-00.000000-111")
-    engine_dir = paths.runtime / "logs" / "snowluma"
+    engine_dir = paths.snowluma_home / "logs"
     engine_dir.mkdir(parents=True)
     old_engine = engine_dir / "snowluma-2020-01-01.log"
     old_engine.write_bytes(b"engine")

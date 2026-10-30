@@ -25,7 +25,8 @@ class Startup:
 def test_corrupt_residence_options_do_not_block_startup_or_overwrite_original(tmp_path, text):
     runtime = tmp_path / "runtime"
     runtime.mkdir()
-    file = runtime / "preferences.json"
+    file = runtime / "settings" / "preferences.json"
+    file.parent.mkdir(parents=True)
     file.write_text(text, encoding="utf-8")
     startup = Startup()
     resident = Residence(
@@ -99,7 +100,7 @@ def test_default_close_asks_without_writing_startup_or_preferences(tmp_path):
     assert ask(resident) is False and window.calls == ["prompt", "prompt"]
     resident.resolve_close("exit")
     assert ask(resident) is True and window.calls[-1] == "destroy"
-    assert not (tmp_path / "runtime" / "preferences.json").exists()
+    assert not (tmp_path / "runtime" / "settings" / "preferences.json").exists()
     resident.close()
 
 
@@ -160,7 +161,7 @@ def test_disable_tray_and_user_startup_and_rollback_failed_file_write(tmp_path, 
     with pytest.raises(OSError):
         resident.save(dict(DEFAULTS))
     assert resident.read() == {**options, "trayReady": True}
-    assert json.loads((tmp_path / "runtime" / "preferences.json").read_text()) == options
+    assert json.loads((tmp_path / "runtime" / "settings" / "preferences.json").read_text()) == options
     monkeypatch.undo()
     resident.save(dict(DEFAULTS))
     assert resident._tray is None and startup.value is False and ask(resident) is False
@@ -183,7 +184,8 @@ def test_invalid_options_never_change_startup(tmp_path):
 def test_hide_on_demand_does_not_change_preferences_and_old_silent_hide_is_ignored(tmp_path):
     paths = DesktopPaths(tmp_path, tmp_path / "runtime")
     paths.runtime.mkdir()
-    (paths.runtime / "preferences.json").write_text(
+    (paths.runtime / "settings").mkdir(parents=True)
+    (paths.runtime / "settings" / "preferences.json").write_text(
         json.dumps({"trayEnabled": False, "closeToTray": True, "startup": False})
     )
     resident = Residence(paths, startup=Startup(), tray_factory=Tray)
@@ -194,7 +196,7 @@ def test_hide_on_demand_does_not_change_preferences_and_old_silent_hide_is_ignor
     assert ask(resident) is False and window.calls == ["prompt"]
     resident.resolve_close("hide")
     assert resident.read() == {**DEFAULTS, "trayReady": True}
-    assert json.loads((paths.runtime / "preferences.json").read_text())["closeToTray"] is True
+    assert json.loads((paths.runtime / "settings" / "preferences.json").read_text())["closeToTray"] is True
     with pytest.raises(ValueError):
         resident.resolve_close("exit")
     resident.close()

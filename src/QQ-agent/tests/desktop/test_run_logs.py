@@ -63,7 +63,7 @@ print(json.dumps(results))
     assert not (tmp_path / "desktop.log").exists() and not (tmp_path / "launcher.log").exists()
     for index, launch in enumerate(launches, 1):
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.\d{6}-\d+", launch["session"])
-        directory = tmp_path / "logs" / launch["session"]
+        directory = tmp_path / "logs" / "app" / launch["session"]
         text = (directory / "desktop.log").read_text(encoding="utf-8")
         assert f"launch-marker-{index}" in text and f"launch-marker-{3 - index}" not in text
         assert "QQBot 启动" in text and "QQBot 本次运行结束" in text

@@ -121,6 +121,28 @@ SnowLuma WebUI 的登录密码由本项目首次启动时自动生成，**保存
 | `tools/python/`、`tools/node/` | 安装后生成的项目专用运行时，不入库 |
 | `runtime/`、`data/` | 运行数据，不入库 |
 
+## 运行数据目录
+
+应用运行后的数据全部落在本机，布局如下（老版本升级时会自动把旧位置的数据搬进来，无需手动迁移）：
+
+```
+runtime/                            本应用的运行数据
+├── logs/app/<启动会话>/             每次启动一个目录（desktop/frontend/launcher.log），
+│                                   自动只保留最近 10 个会话
+├── webview/                        WebView2 浏览器缓存，可随时整个删除，下次启动重建
+├── accounts/<QQ号>/                机器人业务数据（agent.sqlite3：人设/会话/记忆/贴纸）
+├── settings/                       用户设置（global.json 模型与联网、appearance.json 主题、
+│                                   preferences.json 托盘行为、storage.json 存储策略）
+├── state/                          程序状态（account.json 当前账号、app.json 运行状态、
+│                                   taskbar-shortcut.json 任务栏身份标记）
+└── secrets/                        凭据（见「SnowLuma 控制台密码」）
+
+data/services/snowluma/             SnowLuma 引擎的家目录（引擎自己的布局）
+├── config/                         引擎配置（onebot.json 由应用首次初始化，其余由引擎 WebUI 写）
+├── data/<QQ号>/                    引擎的消息/回应数据库
+└── logs/                           引擎日志（按天分文件，引擎自带轮转与总量清理）
+```
+
 ## 开发检查
 
 先运行安装脚本准备依赖。在项目根目录打开 PowerShell，运行后端测试：

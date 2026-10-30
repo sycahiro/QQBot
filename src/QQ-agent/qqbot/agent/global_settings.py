@@ -3,8 +3,9 @@
 import copy
 import json
 import threading
+from pathlib import Path
 
-from ..desktop.paths import save_state
+from ..desktop.paths import adopt, save_state
 from .config import DEFAULTS, GLOBAL_FIELDS, merge_config, validate, validate_api
 from .media_models import FEATURES
 from .profiles import check_api, manage_profile, public_config
@@ -15,7 +16,9 @@ MEDIA_FIELDS = frozenset({"vision", "visionModel", "sendImages"})
 
 class GlobalSettings:
     def __init__(self, runtime):
-        self._file = runtime / "global-settings.json"
+        self._file = adopt(
+            Path(runtime) / "settings" / "global.json", Path(runtime) / "global-settings.json"
+        )
         self._lock = threading.RLock()
 
     def read(self, scope="global", *, public=False):
@@ -32,7 +35,7 @@ class GlobalSettings:
                     config.update(raw)
                     validate(config)
                 except (ValueError, TypeError, KeyError, OSError) as error:
-                    raise ValueError("全局设置无法读取，原文件已保留。删除 runtime/global-settings.json 可重置全局设置为默认值，原全局设置将丢失") from error
+                    raise ValueError("全局设置无法读取，原文件已保留。删除 runtime/settings/global.json 可重置全局设置为默认值，原全局设置将丢失") from error
         config["api"].update({k: config["mediaOptions"][k] for k in FEATURES})
         return public_config(config) if public else config
 

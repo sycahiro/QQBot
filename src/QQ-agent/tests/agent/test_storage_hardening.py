@@ -40,7 +40,7 @@ def test_explicit_chat_token_field_and_legacy_profiles_keep_keys(tmp_path, field
     shared.profile(
         "global", "save", {"name": "fixture", "api": {"model": "fixture", "apiKey": "fixture-key"}}
     )
-    file = tmp_path / "global-settings.json"
+    file = tmp_path / "settings" / "global.json"
     raw = json.loads(file.read_text())
     for api in [raw["api"], raw["profiles"][0]["api"]]:
         api.pop("chatTokenLimitField")
@@ -60,9 +60,11 @@ def test_explicit_chat_token_field_and_legacy_profiles_keep_keys(tmp_path, field
 
 @pytest.mark.parametrize("payload", [b'{"api":', b"\xff\xfeinvalid"])
 def test_damaged_global_config_preserves_bytes_and_reports_consistently(tmp_path, payload):
-    file = tmp_path / "global-settings.json"
-    file.write_bytes(payload)
+    legacy = tmp_path / "global-settings.json"
+    legacy.write_bytes(payload)
     shared = GlobalSettings(tmp_path)
+    file = tmp_path / "settings" / "global.json"
+    assert legacy.exists() is False and file.exists()
     for operation in (shared.read,):
         with pytest.raises(ValueError, match="全局设置无法读取，原文件已保留"):
             operation()

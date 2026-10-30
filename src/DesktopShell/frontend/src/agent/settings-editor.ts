@@ -361,7 +361,10 @@ export class SettingsEditor {
                           : section === 'persona'
                             ? { persona: snapshot.config.persona }
                             : section === 'defaultPersona'
-                              ? { defaultPersona: snapshot.config.defaultPersona }
+                              ? {
+                                    defaultPersona: snapshot.config.defaultPersona,
+                                    ownerQQ: snapshot.config.ownerQQ,
+                                }
                               : section === 'scope'
                                 ? {
                                       allow: {

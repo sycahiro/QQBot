@@ -58,7 +58,7 @@ function editor(
     return new SettingsEditor(ACCOUNT, config(), save, profile);
 }
 
-test('saving the default persona only writes the default persona section', async () => {
+test('saving the default persona writes persona text together with the admin QQ', async () => {
     const calls = [];
     const e = editor(async (patch) => {
         calls.push(patch);
@@ -69,11 +69,18 @@ test('saving the default persona only writes the default persona section', async
         config: {
             ...draft.config,
             defaultPersona: { roleText: 'new default', customRules: 'rule' },
+            ownerQQ: '10086',
         },
     });
     assert.ok(e.dirty('defaultPersona'));
     await e.save('defaultPersona');
-    assert.deepEqual(calls, [{ defaultPersona: { roleText: 'new default', customRules: 'rule' } }]);
+    // 管理员 QQ 必须随同一张卡片保存；漏发会导致输入框被回读清空。
+    assert.deepEqual(calls, [
+        {
+            defaultPersona: { roleText: 'new default', customRules: 'rule' },
+            ownerQQ: '10086',
+        },
+    ]);
     assert.ok(!e.dirty('defaultPersona'));
 });
 test('editing never writes until the corresponding save button is invoked', async () => {

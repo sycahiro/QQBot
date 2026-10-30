@@ -40,6 +40,7 @@ const names: Record<string, string> = {
     sticker_note: '备注表情',
     send_sticker: '发送表情',
     send_poke: '拍一拍',
+    recall_message: '撤回消息',
 };
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
 export function toolOutcome(record: SessionRecord) {
@@ -217,7 +218,7 @@ export function SessionDetail({ session }: { session: Session }) {
                     <dd>{seconds === null ? '进行中' : `${seconds.toFixed(1)} 秒`}</dd>
                 </div>
             </dl>
-            <section className="session-reply">
+            <section>
                 <h3>
                     <MessageSquare size={15} />
                     实际回复<span>{session.sent.length} 条回执</span>

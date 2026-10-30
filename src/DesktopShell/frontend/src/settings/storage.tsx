@@ -179,7 +179,7 @@ export function StorageSettings({ ready }: { ready: boolean }) {
             engineDays !== String(data.settings.engineRetainDays)),
     );
     return (
-        <div className="desktop-sections storage-settings">
+        <div className="desktop-sections">
             <Notice
                 title={failed ? '操作未完成' : '存储管理'}
                 message={notice}

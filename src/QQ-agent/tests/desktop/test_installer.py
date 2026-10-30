@@ -1,12 +1,10 @@
 """Exercise the single-file installer's clean-install paths without network access."""
 
-import hashlib
 import io
 import os
 import subprocess
 import sys
 import tarfile
-import zipfile
 from pathlib import Path
 
 import pytest
@@ -68,24 +66,18 @@ Install-PythonBase @{{ Url = 'fixture'; Version = '3.15.2' }}
     assert not (runtime / "requirements.txt").exists()
 
 
-def test_snowluma_install_checks_hash_and_preserves_existing(tmp_path):
+def test_snowluma_presence_check_guides_manual_install(tmp_path):
     project = tmp_path / "project"
     (project / "src").mkdir(parents=True)
-    archive = tmp_path / "snowluma.zip"
-    with zipfile.ZipFile(archive, "w") as zip_file:
-        zip_file.writestr("index.mjs", "fixture")
-        zip_file.writestr("package.json", '{}')
-        zip_file.writestr("native/snowluma-win32-x64.node", b"fixture")
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    extra = f"""
-$script:fixtureHash = '{'0' * 64}'
-function SnowLuma-Release {{ return @{{ Version = 'fixture'; Url = 'fixture'; Hash = $script:fixtureHash }} }}
-function Invoke-WebRequest {{ param($Uri, $OutFile, [switch]$UseBasicParsing) Copy-Item -LiteralPath '{quoted(archive)}' -Destination $OutFile }}
-try {{ Install-SnowLuma; throw 'Unexpected success with wrong hash' }} catch {{ if ($_.Exception.Message -notmatch 'SHA-256') {{ throw }} }}
-if (Test-Path -LiteralPath $engine) {{ throw 'Invalid archive was installed' }}
-$script:fixtureHash = '{digest}'
-Install-SnowLuma
-Install-SnowLuma
+    engine = project / "src" / "SnowLuma"
+    extra = """
+try { Assert-SnowLuma; throw 'missing engine was accepted' } catch { if ($_.Exception.Message -notmatch 'win-x64-lite') { throw } }
+New-Item -ItemType Directory -Path $engine -Force | Out-Null
+try { Assert-SnowLuma; throw 'incomplete engine was accepted' } catch { if ($_.Exception.Message -notmatch '不完整') { throw } }
+Set-Content -LiteralPath (Join-Path $engine 'index.mjs') -Value 'fixture' -Encoding UTF8
+Set-Content -LiteralPath (Join-Path $engine 'package.json') -Value '{}' -Encoding UTF8
+Assert-SnowLuma
+Assert-SnowLuma
 """
     run_installer_functions(tmp_path, extra)
-    assert (project / "src" / "SnowLuma" / "index.mjs").read_text(encoding="utf-8") == "fixture"
+    assert (engine / "index.mjs").read_text(encoding="utf-8-sig").strip() == "fixture"

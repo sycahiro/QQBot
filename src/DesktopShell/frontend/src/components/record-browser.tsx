@@ -150,7 +150,7 @@ export function RecordEmpty({
 }) {
     return (
         <div className="record-empty-frame">
-            <section className="ui-card console-panel desktop-empty record-empty">
+            <section className="ui-card console-panel desktop-empty">
                 <span className="empty-icon">{icon}</span>
                 <h3>{title}</h3>
                 {children}

@@ -22,7 +22,6 @@ def test_atomic_state_and_live_desktop_information(tmp_path):
         "mark_ready",
         "window_control",
         "get_qq_processes",
-        "select_qq_account",
         "get_qq_status",
         "connect_qq_account",
         "disconnect_qq_account",

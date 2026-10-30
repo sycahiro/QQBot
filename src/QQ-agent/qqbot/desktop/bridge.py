@@ -265,20 +265,6 @@ class DesktopBridge:
             return {"ok": False, "error": {"code": error.code, "message": str(error)}}
 
     @_guarded
-    def select_qq_account(self, target):
-        if self._discovery is None:
-            return {"ok": False, "error": {"code": "NOT_READY", "message": "QQ 检测服务尚未就绪"}}
-        try:
-            uin = (
-                self._connection.choose(target)
-                if self._connection
-                else self._selection.choose(target, self._discovery)
-            )
-            return {"ok": True, "selectedUin": uin}
-        except (DiscoveryError, EngineError) as error:
-            return {"ok": False, "error": {"code": error.code, "message": str(error)}}
-
-    @_guarded
     def get_qq_status(self):
         return (
             self._connection.status()

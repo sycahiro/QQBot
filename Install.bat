@@ -209,76 +209,26 @@ function Latest-Node24 {
     return $version.version
 }
 
-function SnowLuma-Release {
-    try {
-        $headers = @{ 'User-Agent' = 'QQBot-Setup'; 'Accept' = 'application/vnd.github+json' }
-        $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/SnowLuma/SnowLuma/releases/latest' -Headers $headers -UseBasicParsing -TimeoutSec 60
-        $assets = @($release.assets | Where-Object { $_.name -match '^SnowLuma-v[0-9][A-Za-z0-9.\-]*-win-x64-lite\.zip$' })
-        if ($assets.Count -ne 1 -or $assets[0].digest -notmatch '^sha256:[0-9a-fA-F]{64}$') { throw '官方发行信息缺少唯一的 Windows 轻量版或 SHA-256' }
-        if ($assets[0].browser_download_url -notmatch '^https://github\.com/SnowLuma/SnowLuma/releases/download/') { throw '官方发行包下载地址无效' }
-        return @{ Version = $release.tag_name; Url = $assets[0].browser_download_url; Hash = $assets[0].digest.Substring(7) }
-    }
-    catch {
-        # GitHub unauthenticated API can rate-limit. This official release was
-        # verified against its release metadata; keep it only as a fallback.
-        Write-Warning '无法查询官方最新发行信息，将使用已验证的 SnowLuma v2.2.1。'
-        return @{
-            Version = 'v2.2.1'
-            Url = 'https://github.com/SnowLuma/SnowLuma/releases/download/v2.2.1/SnowLuma-v2.2.1-win-x64-lite.zip'
-            Hash = '29e11c07978f2e970ad918a574650573b74f8ee796e6fa39747dbfb5f74c08f6'
-        }
-    }
-}
-
-function Install-SnowLuma {
+function Assert-SnowLuma {
     if (Test-Path -LiteralPath $engine) {
         if (-not (Test-Path -LiteralPath (Join-Path $engine 'index.mjs') -PathType Leaf) -or
             -not (Test-Path -LiteralPath (Join-Path $engine 'package.json') -PathType Leaf)) {
-            throw "SnowLuma 目录已存在但不完整，已保留原目录：$engine"
+            throw "SnowLuma 目录已存在但不完整，请重新按 README 说明解压完整的发行包：$engine"
         }
-        Write-Host 'SnowLuma 已存在，保留现有发行包。'
+        Write-Host 'SnowLuma 已就绪。'
         return
     }
-    $release = SnowLuma-Release
-    Write-Host "SnowLuma $($release.Version)（官方 Windows x64 Lite）"
-    if ($DryRun) { return }
-    $scratch = Join-Path ([IO.Path]::GetTempPath()) ('qqbot-snowluma-' + [guid]::NewGuid().ToString('N'))
-    New-Item -ItemType Directory -Path $scratch -ErrorAction Stop | Out-Null
-    try {
-        $archive = Join-Path $scratch 'snowluma.zip'
-        $expanded = Join-Path $scratch 'package'
-        Invoke-WebRequest -Uri $release.Url -OutFile $archive -UseBasicParsing
-        if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $release.Hash) { throw 'SnowLuma 压缩包 SHA-256 校验失败' }
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        $zip = [IO.Compression.ZipFile]::OpenRead($archive)
-        try {
-            foreach ($item in $zip.Entries) {
-                if ($item.FullName -match '(^/|^[A-Za-z]:|\\|(^|/)\.\.(/|$))') { throw 'SnowLuma 压缩包包含无效路径' }
-            }
-        }
-        finally { $zip.Dispose() }
-        Expand-Archive -LiteralPath $archive -DestinationPath $expanded
-        if (-not (Test-Path -LiteralPath (Join-Path $expanded 'index.mjs') -PathType Leaf) -or
-            -not (Test-Path -LiteralPath (Join-Path $expanded 'native\snowluma-win32-x64.node') -PathType Leaf) -or
-            -not (Test-Path -LiteralPath (Join-Path $expanded 'package.json') -PathType Leaf)) {
-            throw 'SnowLuma 发行包结构不符合预期，未安装'
-        }
-        if (Test-Path -LiteralPath $engine) { throw 'SnowLuma 目录在安装期间已出现，未覆盖' }
-        $sourcePath = (Resolve-Path -LiteralPath $expanded).Path
-        $destinationPath = [IO.Path]::GetFullPath($engine)
-        $expectedDestination = [IO.Path]::GetFullPath((Join-Path $projectRoot 'src\SnowLuma'))
-        if ($sourcePath -ne $expanded -or $destinationPath -ne $expectedDestination) { throw 'SnowLuma 安装路径异常，未移动文件' }
-        Move-Item -LiteralPath $sourcePath -Destination $destinationPath -ErrorAction Stop
-        Write-Host 'SnowLuma 已安装。'
-    }
-    finally {
-        if (Test-Path -LiteralPath $scratch) {
-            $resolved = (Resolve-Path -LiteralPath $scratch).Path
-            if ($resolved -eq $scratch -and [IO.Path]::GetDirectoryName($resolved) -eq [IO.Path]::GetTempPath().TrimEnd('\')) {
-                Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue
-            }
-        }
-    }
+    throw (@"
+未找到 SnowLuma 引擎。SnowLuma 不随本仓库分发，需要手动安装：
+
+  1. 打开发行页 https://github.com/SnowLuma/SnowLuma/releases
+  2. 下载最新发行版中的 Windows 轻量包：SnowLuma-vX.X.X-win-x64-lite.zip
+  3. 解压，把压缩包内的全部内容放进项目目录的 src\SnowLuma\
+     （放好后应能直接看到 src\SnowLuma\index.mjs 和 src\SnowLuma\package.json）
+  4. 重新运行本安装脚本继续
+
+详见 README 的「安装 SnowLuma」一节。
+"@)
 }
 
 function Get-WebViewVersion {
@@ -340,6 +290,7 @@ function Create-Launcher {
 
 Write-Step '检查系统与运行时'
 if (-not [Environment]::Is64BitOperatingSystem) { throw 'QQBot 需要 64 位 Windows' }
+Assert-SnowLuma
 $nodeVersion = Latest-Node24
 Write-Host "选择 Node $nodeVersion（与项目的 Node 24 要求一致）"
 $pythonPlan = Find-PythonBuild
@@ -347,7 +298,6 @@ Write-Host "选择 Python $($pythonPlan.Version)（发布 $($pythonPlan.Release)
 if ($DryRun) {
     Write-Host "Python 下载地址：$($pythonPlan.Url)"
     Write-Host "Node 下载地址：https://registry.npmmirror.com/-/binary/node/$nodeVersion/node-$nodeVersion-win-x64.zip"
-    Install-SnowLuma
     Install-WebView2
     Write-Host 'DryRun：不修改任何文件。'
     return
@@ -382,8 +332,8 @@ try {
 }
 finally { $env:PATH = $previousPath }
 
-Write-Step '准备 SnowLuma'
-Install-SnowLuma
+Write-Step '确认 SnowLuma'
+Assert-SnowLuma
 
 Write-Step '检查运行环境'
 $semver = Join-Path $nodeDir 'node_modules\npm\node_modules\semver'

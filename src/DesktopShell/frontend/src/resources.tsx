@@ -4,7 +4,7 @@ import { useResources } from './desktop';
 
 function Usage({ label, value, detail }: { label: string; value: number | null; detail: string }) {
     return (
-        <div className="resource-usage">
+        <div>
             <div className="resource-label">
                 <small>{label}</small>
                 <strong>{value == null ? '采样中' : `${value.toFixed(1)}%`}</strong>
@@ -38,7 +38,7 @@ export function Resources({ ready }: { ready: boolean }) {
                 <Cpu size={18} />
             </div>
             <div className="environment-grid">
-                <div className="resource-host">
+                <div>
                     <strong>{data?.hostname ?? '正在读取主机信息'}</strong>
                     <p>{data?.cpuModel ?? '—'}</p>
                 </div>

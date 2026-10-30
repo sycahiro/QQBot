@@ -83,9 +83,6 @@ export type QqDiscoveryResult =
           warning?: string;
       }
     | { ok: false; error: { code: string; message: string } };
-type QqSelectionResult =
-    | { ok: true; selectedUin: string | null }
-    | { ok: false; error: { code: string; message: string } };
 
 export interface QqConnectionInfo {
     state: 'idle' | 'connecting' | 'ready' | 'disconnecting' | 'disconnected' | 'error' | 'closed';
@@ -177,9 +174,6 @@ declare global {
                 save_webui_password_memo(
                     password: string,
                 ): Promise<ApiResult<{ password: string | null }>>;
-                select_qq_account(
-                    target: { pid: number; processKey: string; uin: string } | null,
-                ): Promise<QqSelectionResult>;
                 get_qq_status(): Promise<QqConnectionInfo>;
                 connect_qq_account(target: {
                     pid: number;

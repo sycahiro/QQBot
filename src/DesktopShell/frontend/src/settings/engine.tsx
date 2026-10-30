@@ -143,18 +143,12 @@ function PasswordMemo() {
                     <code className="memo-secret-value">
                         {revealed ? saved : '•'.repeat(Math.min(saved.length, 20))}
                     </code>
-                    <button
-                        className="btn btn-sm memo-action"
-                        onClick={() => setRevealed((value) => !value)}
-                    >
+                    <button onClick={() => setRevealed((value) => !value)}>
                         {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
                         {revealed ? '隐藏' : '显示'}
                     </button>
-                    <button className="btn btn-sm memo-action" onClick={() => void copy()}>
-                        {copied ? '已复制' : '复制'}
-                    </button>
+                    <button onClick={() => void copy()}>{copied ? '已复制' : '复制'}</button>
                     <button
-                        className="btn btn-sm memo-action"
                         onClick={() => {
                             setEditing(true);
                             setDraft(saved);
@@ -186,7 +180,7 @@ function PasswordMemo() {
                         {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                     <button
-                        className="btn btn-primary btn-sm memo-action"
+                        className="btn btn-primary btn-sm"
                         disabled={busy || !draft.trim()}
                         onClick={() => void save(draft)}
                     >
@@ -195,7 +189,6 @@ function PasswordMemo() {
                     </button>
                     {editing && (
                         <button
-                            className="btn btn-sm memo-action"
                             disabled={busy}
                             onClick={() => {
                                 setEditing(false);

@@ -28,7 +28,6 @@ from ..agent.web import (
     search_with_fallback,
     web_url,
 )
-from ..extensions.market import MarketCatalog, page_url
 from ..qq.discovery import DiscoveryError
 from ..qq.engine import EngineError
 from ..qq.selection import AccountSelection
@@ -93,7 +92,6 @@ class DesktopBridge:
         self._residence = residence
         self._frame = frame
         self._global_settings = global_settings
-        self._market = MarketCatalog()
         self._models = ModelChecks()
         self._reviews = MemoryReviews()
         self._web = WebClient()
@@ -1185,26 +1183,6 @@ class DesktopBridge:
             }
 
         return self._business(read)
-
-    def get_market(self, kind="plugin"):
-        return self._business(lambda: self._market.read(kind))
-
-    def open_market_page(self, kind="plugin"):
-        """把官方市场页交给系统浏览器打开；地址由白名单决定，前端无法指定 URL。"""
-
-        def launch():
-            if not isinstance(kind, str):
-                raise ValueError("未知的扩展类型")
-            url = page_url(kind)
-            try:
-                opened = webbrowser.open(url, new=2)
-            except (webbrowser.Error, OSError):
-                opened = False
-            if not opened:
-                raise ValueError("无法拉起系统浏览器，请手动访问 www.kondius.cn")
-            return {"url": url}
-
-        return self._business(launch)
 
     def open_project_page(self, project):
         """Open only fixed official project websites in the system browser."""

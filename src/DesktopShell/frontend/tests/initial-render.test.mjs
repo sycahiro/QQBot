@@ -24,7 +24,6 @@ test('business pages render while the bridge and records are still loading', asy
             ['/src/agent/memory.tsx', 'Memory'],
             ['/src/agent/settings.tsx', 'BotSettings'],
             ['/src/agent/extensions.tsx', 'Extensions'],
-            ['/src/agent/market.tsx', 'Market'],
             ['/src/agent/stickers.tsx', 'Stickers'],
             ['/src/residence.tsx', 'ResidenceSettings'],
             ['/src/settings/media.tsx', 'MediaSettings'],

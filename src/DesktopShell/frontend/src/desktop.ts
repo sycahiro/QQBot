@@ -16,7 +16,6 @@ import type {
     MemoryChat,
     MemoryMember,
     MemoryPreview,
-    MarketEntry,
     Sticker,
 } from './business';
 
@@ -382,16 +381,7 @@ declare global {
                         usage: Usage | null;
                     }>
                 >;
-                get_market(kind: 'plugin' | 'skill'): Promise<
-                    ApiResult<{
-                        kind: string;
-                        items: MarketEntry[];
-                        readOnly: true;
-                        compatible: false;
-                    }>
-                >;
                 get_dependencies(): Promise<ApiResult<DependencyInventory>>;
-                open_market_page(kind: 'plugin' | 'skill'): Promise<ApiResult<{ url: string }>>;
                 open_project_page(
                     project: 'python' | 'node' | 'snowluma' | 'author' | 'repo' | 'issues',
                 ): Promise<ApiResult<{ url: string }>>;

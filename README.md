@@ -17,7 +17,7 @@ QQBot 是一个运行在 Windows 上的个人 QQ 桌面助手。它通过独立�
 - **联网搜索（可选）**：通过本机工具搜索并阅读网页。
 - **其他**：拍一拍互动、撤回自己刚发出的错误消息、合并转发展开。
 
-当前版本面向 Windows 桌面版个人 QQ。扩展页面用于浏览信息，暂不支持直接安装原项目的扩展。
+当前版本面向 Windows 桌面版个人 QQ。"扩展"页面仅作占位展示：**原项目的插件市场已停止服务**。上游作者（K0nd1us）已于 2026 年 10 月下旬删除其 GitHub 仓库（<https://github.com/K0nd1us/QQ-agent> 现已 404，作者账号下的公开仓库已全部清空，最后可查的公开活跃记录为 2026 年 10 月 19 日），原插件市场页面 <https://www.kondius.cn/qq-agent/plugin-market/> 也已无法访问（2026 年 10 月 30 日验证返回 503）。因此本版本移除了插件市场浏览功能，目前没有可安装的扩展。
 
 **音频和视频功能当前暂未加入。**如有需要，欢迎 Fork 本仓库自行修改实现，也欢迎通过 Pull Request 提交改进。
 
@@ -130,6 +130,6 @@ cd src\DesktopShell
 
 ## 许可与来源
 
-本项目以 [MIT License](LICENSE) 发布。机器人业务设计和部分实现参考或改写自 [QQ Agent](https://github.com/K0nd1us/QQ-agent)，原项目版权及许可声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。SnowLuma 为独立项目，通过上述手动安装方式获取，适用其自身的许可与条款。
+本项目以 [MIT License](LICENSE) 发布。机器人业务设计和部分实现参考或改写自 QQ Agent（原仓库 <https://github.com/K0nd1us/QQ-agent>，已于 2026 年 10 月下旬被作者删除，现无法访问），原项目版权及许可声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)，相关致谢与许可条款继续有效。SnowLuma 为独立项目，通过上述手动安装方式获取，适用其自身的许可与条款。
 
 QQBot 是独立项目，与腾讯及 QQ 没有隶属关系。使用前请自行确认符合所用平台的相关条款。

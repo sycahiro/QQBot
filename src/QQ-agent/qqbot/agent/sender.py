@@ -24,6 +24,40 @@ def _validate_model_text(text):
         )
 
 
+ARRAY_ECHO_LINE = re.compile(r'^\[\s*".*"\s*\]$')
+
+
+def without_duplicated_array_echo(text):
+    """Models sometimes append a JSON-encoded copy of the same text below the
+    real content (format confusion). That echo line adds nothing: drop it when
+    it repeats the surrounding lines; anything else stays untouched."""
+    lines = text.split("\n")
+    echoes = []
+    for line in lines:
+        stripped = line.strip()
+        decoded = None
+        if ARRAY_ECHO_LINE.match(stripped):
+            try:
+                decoded = json.loads(stripped)
+            except ValueError:
+                decoded = None
+        echoes.append(
+            decoded
+            if isinstance(decoded, list) and all(isinstance(item, str) for item in decoded)
+            else None
+        )
+    kept = [line for line, echo in zip(lines, echoes) if echo is None]
+    if kept and any(echo is not None for echo in echoes):
+        joined = "\n".join(part.strip() for part in kept if part.strip())
+        kept = [
+            line
+            for line, echo in zip(lines, echoes)
+            if echo is None or "\n".join(item.strip() for item in echo) != joined
+        ]
+        return "\n".join(kept)
+    return text
+
+
 # QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
 # named [表情:呲牙] (resolved via the face table). Unknown tokens are dropped:
 # sending guessed names verbatim reads as broken output.
@@ -106,12 +140,13 @@ class Sender:
                 # Models keep passing one string with blank-line separated
                 # sentences although one message carries one thing. Honor the
                 # intended split like the double-encoded array decode above.
+                cleaned = without_duplicated_array_echo(values)
                 paragraphs = [
-                    part.strip() for part in re.split(r"\n\s*\n", values) if part.strip()
+                    part.strip() for part in re.split(r"\n\s*\n", cleaned) if part.strip()
                 ]
                 if len(paragraphs) > 4:
                     paragraphs = paragraphs[:3] + ["\n\n".join(paragraphs[3:])]
-                values = paragraphs if len(paragraphs) >= 2 else [values]
+                values = paragraphs if len(paragraphs) >= 2 else [cleaned]
         if isinstance(values, list):
             for value in values:
                 if isinstance(value, str):
@@ -133,7 +168,9 @@ class Sender:
                                 "每个元素写纯文本正文，不要把数组或引号塞进正文"
                             )
             values = [
-                value.replace("\x00", "").strip() if isinstance(value, str) else value
+                without_duplicated_array_echo(value.replace("\x00", "")).strip()
+                if isinstance(value, str)
+                else value
                 for value in values
             ]
         if (

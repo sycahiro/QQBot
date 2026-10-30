@@ -1319,26 +1319,6 @@ p.action-notice {
     color: var(--muted-foreground);
 }
 
-.market-grid > .animated-list-item {
-    min-width: 0;
-    height: 100%;
-}
-.market-grid > .animated-list-item > .animated-list-clip {
-    height: 100%;
-}
-.market-grid > .animated-list-item > .animated-list-clip > .animated-list-content {
-    height: 100%;
-}
-.market-grid .console-panel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-.market-grid .console-panel > .session-status {
-    align-self: flex-start;
-    flex: none;
-}
 .tab-panel-frame {
     min-width: 0;
     overflow-anchor: none;
@@ -2333,28 +2313,6 @@ p.action-notice {
 }
 .log-warning {
     color: var(--warning);
-}
-.market-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    /* 所有卡片同高：行高取最高的一张，短卡片跟着拉齐。 */
-    grid-auto-rows: 1fr;
-    gap: 18px;
-}
-.market-description {
-    font-size: 12px;
-    color: var(--muted-foreground);
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    margin-bottom: 20px;
-    /* 说明过长时在卡片内部滚动，卡片本身不再被撑高。 */
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: 134px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-width: thin;
-    padding-right: 2px;
 }
 
 @keyframes qq-scan-spin {

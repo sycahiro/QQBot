@@ -44,8 +44,6 @@ def test_atomic_state_and_live_desktop_information(tmp_path):
         "apply_memory_preview",
         "get_logs",
         "get_diagnostics",
-        "get_market",
-        "open_market_page",
         "open_project_page",
         "get_model_list",
         "test_model_connection",

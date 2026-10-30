@@ -156,14 +156,6 @@ export interface MemoryPreview {
     sourceCount: number;
     expiresIn: number;
 }
-export interface MarketEntry {
-    id: string;
-    name: string;
-    description: string;
-    version: string;
-    author: string;
-    category: string;
-}
 export function dateTime(ts: number) {
     return new Date(ts).toLocaleString('zh-CN', { hour12: false });
 }

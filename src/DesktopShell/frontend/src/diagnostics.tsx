@@ -157,7 +157,7 @@ export function Logs({ ready }: { ready: boolean }) {
                     <p className="action-notice">
                         {search
                             ? '没有匹配的日志'
-                            : '暂无运行日志；模型的处理详情在 QQ Agent 页的会话中查看。'}
+                            : '暂无运行日志；模型的处理详情在 QQ Bot 页的会话中查看。'}
                     </p>
                 )}
             </div>

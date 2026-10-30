@@ -356,7 +356,7 @@ export function QqAccounts({
                         {error}
                     </div>
                 )}
-                <Notice title="QQ Agent" message={notice} onClose={() => setNotice('')} />
+                <Notice title="QQ Bot" message={notice} onClose={() => setNotice('')} />
                 {processes?.length === 0 && (
                     <div className="desktop-empty page-enter">
                         <span className="empty-icon">
@@ -449,7 +449,7 @@ export function QqAccounts({
                 )}
                 {Boolean(processes?.length) && (
                     <p className="qq-discovery-note">
-                        连接后，到 QQ Agent 页开启自动回复并查看会话。
+                        连接后，到 QQ Bot 页开启自动回复并查看会话。
                     </p>
                 )}
             </section>

@@ -59,7 +59,7 @@ const pages = [
     {
         id: 'agent',
         group: '机器人',
-        title: 'QQ Agent',
+        title: 'QQ Bot',
         icon: Bot,
         caption: '个人 QQ 的会话、记忆与自动回复',
     },
@@ -376,7 +376,7 @@ function Overview({
             icon: QrCode,
         },
         {
-            label: 'QQ Agent',
+            label: 'QQ Bot',
             value: agent?.enabled
                 ? agent.running
                     ? '正在处理'

@@ -2264,7 +2264,9 @@ p.action-notice {
 .archive-detail {
     max-height: calc(100vh - 390px);
     overflow-y: auto;
-    overflow-anchor: none;
+    /* 详情内容由后台轮询增量更新（状态卡、回执、耗时都会增高）。
+       这里必须保留浏览器原生滚动锚定：视口上方内容增高时自动补偿
+       scrollTop，用户的阅读位置不会被强行推走。 */
 }
 .archive-detail.archive-thread-panel {
     display: flex;

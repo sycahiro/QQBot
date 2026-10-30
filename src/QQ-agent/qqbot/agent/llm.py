@@ -3,12 +3,19 @@
 import asyncio
 import copy
 import json
+import re
 import zlib
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
 
 PROTOCOLS = ("chat", "responses", "anthropic")
+
+# 搜索请求中决定请求语义的核心字段：任何服务商的 400 兼容降级都不剥离它们——
+# 去掉 tools/tool_choice 会把搜索请求静默降级成普通对话，掩盖真实的不兼容。
+_SEARCH_CORE_BODY_KEYS = frozenset(
+    {"model", "input", "messages", "instructions", "stream", "tools", "tool_choice"}
+)
 
 
 def endpoint(base, protocol, *, models=False):
@@ -303,6 +310,19 @@ class SearchModelError(ModelError):
         self.usage = usage
 
 
+async def _reject_reason(response):
+    """服务商 400 时仅回显其 JSON 错误里的 message 字段，原始响应体绝不透传。"""
+    try:
+        await response.aread()
+        payload = json.loads(response.content)
+        message = payload["error"]["message"] if isinstance(payload, dict) else None
+        if isinstance(message, str) and message:
+            return f"：{message[:200]}"
+    except (httpx.HTTPError, ValueError, KeyError, TypeError):
+        pass
+    return ""
+
+
 def search_usage(parsed, protocol):
     value = parsed.get("usage", {}) if isinstance(parsed, dict) else {}
     value = value if isinstance(value, dict) else {}
@@ -451,7 +471,9 @@ class ChatClient:
                     if response.status_code != 200:
                         if response.status_code == 400:
                             raise ModelError(
-                                "模型接口拒绝了当前请求参数（HTTP 400），请检查协议、工具调用和模型参数的兼容性"
+                                "模型接口拒绝了当前请求参数（HTTP 400）"
+                                + await _reject_reason(response)
+                                + "，请检查协议、工具调用和模型参数的兼容性"
                             )
                         raise ModelError(
                             f"模型请求返回 HTTP {response.status_code}，请检查地址、密钥、模型和服务商状态"
@@ -536,23 +558,45 @@ class ChatClient:
                 "stream": False,
             }
         limited = {**api, "timeoutMs": min(api["timeoutMs"], 60000)}
-        work = asyncio.create_task(self._post(limited, body))
+
+        async def send(payload):
+            work = asyncio.create_task(self._post(limited, payload))
+            try:
+                while not work.done():
+                    if not permit():
+                        raise asyncio.CancelledError()
+                    await asyncio.wait({work}, timeout=0.1)
+                return json.loads(work.result())
+            except ModelError:
+                raise
+            except (TimeoutError, httpx.HTTPError) as error:
+                raise ModelError("模型搜索请求失败或超时，未自动重试") from error
+            except (ValueError, TypeError) as error:
+                raise ModelError("模型搜索响应不是有效 JSON") from error
+            finally:
+                if not work.done():
+                    work.cancel()
+                await asyncio.gather(work, return_exceptions=True)
+
         try:
-            while not work.done():
-                if not permit():
-                    raise asyncio.CancelledError()
-                await asyncio.wait({work}, timeout=0.1)
-            parsed = json.loads(work.result())
-        except ModelError:
-            raise
-        except (TimeoutError, httpx.HTTPError) as error:
-            raise ModelError("模型搜索请求失败或超时，未自动重试") from error
-        except (ValueError, TypeError) as error:
-            raise ModelError("模型搜索响应不是有效 JSON") from error
-        finally:
-            if not work.done():
-                work.cancel()
-            await asyncio.gather(work, return_exceptions=True)
+            parsed = await send(body)
+        except ModelError as error:
+            # 通用的兼容降级：服务商 400 的报错里点名了哪个可选参数，就剥离哪个
+            # 参数重试一次。不绑定特定服务商或特定字段——官方端点、中转站、
+            # 任何第三方网关都按同一规则工作；报错未点名任何可选参数则原样抛出。
+            dropped = {
+                key
+                for key in body
+                if key not in _SEARCH_CORE_BODY_KEYS
+                and re.search(rf"\b{re.escape(key)}\b", str(error), re.IGNORECASE)
+            }
+            if not dropped:
+                raise
+            if not permit():
+                raise asyncio.CancelledError()
+            parsed = await send(
+                {key: value for key, value in body.items() if key not in dropped}
+            )
         usage = search_usage(parsed, protocol)
         try:
             return parse_search(parsed, protocol, api["model"], usage)

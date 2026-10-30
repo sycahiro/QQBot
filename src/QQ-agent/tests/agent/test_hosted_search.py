@@ -179,6 +179,68 @@ def test_hosted_search_error_and_redirect_never_echo_body_or_forward_keys():
         assert len(calls) == 1 and "sensitive-search-secret" not in str(error.value)
 
 
+def test_rejected_optional_parameter_is_dropped_and_retried_once():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(
+                400, json={"error": {"message": "Unsupported parameter: max_tool_calls"}}
+            )
+        return httpx.Response(200, json=payload("responses"))
+
+    r = asyncio.run(
+        ChatClient(transport=httpx.MockTransport(handler)).search(api(), "query", lambda: True)
+    )
+    bodies = [json.loads(request.content) for request in requests]
+    assert len(requests) == 2
+    assert bodies[0]["max_tool_calls"] == 1 and "max_tool_calls" not in bodies[1]
+    assert r["content"] == "检索回答"
+
+
+def test_parameter_fallback_is_generic_across_names_and_protocols():
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(
+                400,
+                json={
+                    "error": {
+                        "message": "Unrecognized request argument supplied: max_output_tokens"
+                    }
+                },
+            )
+        return httpx.Response(200, json=payload("responses"))
+
+    r = asyncio.run(
+        ChatClient(transport=httpx.MockTransport(handler)).search(api(), "query", lambda: True)
+    )
+    bodies = [json.loads(request.content) for request in requests]
+    assert len(requests) == 2
+    assert "max_output_tokens" in bodies[0] and "max_output_tokens" not in bodies[1]
+    assert r["content"] == "检索回答"
+
+
+def test_rejections_naming_core_keys_or_nothing_are_not_retried():
+    for message in ("Unsupported parameter: tools", "Invalid model identifier"):
+        calls = []
+
+        def handler(request, message=message, calls=calls):
+            calls.append(request)
+            return httpx.Response(400, json={"error": {"message": message}})
+
+        with pytest.raises(ModelError, match=message):
+            asyncio.run(
+                ChatClient(transport=httpx.MockTransport(handler)).search(
+                    api(), "query", lambda: True
+                )
+            )
+        assert len(calls) == 1
+
+
 def test_hosted_search_is_cancellable_and_closes_its_inflight_request():
     active = [True]
     closed = []

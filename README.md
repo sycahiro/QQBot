@@ -90,6 +90,18 @@ SnowLuma 是连接 QQ 的独立引擎。由于许可与分发限制，**它不�
 
 默认人设用于新账号的初始设置，也可以手动填入已有账号；修改默认人设不会自动覆盖已保存的账号人设。
 
+## SnowLuma 控制台密码
+
+SnowLuma WebUI 的登录密码由本项目首次启动时自动生成，**保存在本机明文文件里，随时可以查看**：
+
+| 文件 | 内容 |
+| --- | --- |
+| `runtime/secrets/snowluma-service.json` | 首次启动自动生成的初始密码（`password` 字段）。只要没在 WebUI 里改过密码，它就一直有效 |
+| `runtime/secrets/webui-password.json` | 在应用设置里手动保存的"密码备忘"（改过密码后自己存一份的备忘） |
+
+- 密码首次生成后固定，重启 SnowLuma 也沿用同一个。
+- 如果改过密码又忘了：关闭应用，删除 `data/services/snowluma/config/webui.json`（只删这一个文件），重新启动后会用初始密码重新初始化，再去 `runtime/secrets/snowluma-service.json` 找回它。
+
 ## 数据与安全
 
 - 设置、聊天存档、记忆、日志和服务凭据都保存在本机 `runtime/` 等运行数据目录，不属于仓库源码。

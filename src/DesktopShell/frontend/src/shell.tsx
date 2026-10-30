@@ -138,13 +138,14 @@ export function DesktopShell() {
         };
     }, []);
     useEffect(() => {
-        const account = status?.account;
-        if (!info || !account || !status?.model) return;
+        if (!info || !status?.model) return;
         let active = true;
         setModelProbe('testing');
         const run = async () => {
             try {
-                const result = await window.pywebview!.api.test_model_connection(account);
+                // 模型配置存放在全局设置、不绑定 QQ 账号（顶栏模型名同样来自全局），
+                // 因此用全局作用域探测，QQ 是否连接不影响探活。
+                const result = await window.pywebview!.api.test_model_connection(null);
                 if (active) setModelProbe(result.ok ? 'ok' : 'fail');
             } catch {
                 if (active) setModelProbe('fail');
@@ -154,7 +155,7 @@ export function DesktopShell() {
         return () => {
             active = false;
         };
-    }, [info, status?.account, status?.model]);
+    }, [info, status?.model]);
     useEffect(() => {
         resetSettingsEditor();
     }, [connection?.connected, connection?.account?.uin, connection?.account?.pid]);

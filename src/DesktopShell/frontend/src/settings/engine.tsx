@@ -118,12 +118,33 @@ function PasswordMemo() {
         if (!saved) return;
         try {
             await navigator.clipboard.writeText(saved);
+        } catch {
+            // pywebview 环境下 Clipboard API 可能不可用；回退到隐藏文本域复制。
+            const area = document.createElement('textarea');
+            area.value = saved;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            let ok = false;
+            try {
+                ok = document.execCommand('copy');
+            } catch {
+                ok = false;
+            }
+            document.body.removeChild(area);
+            if (!ok) {
+                if (mounted.current) setError('复制失败，请显示密码后手动复制');
+                return;
+            }
+        }
+        if (mounted.current) {
+            setError('');
             setCopied(true);
             window.setTimeout(() => {
                 if (mounted.current) setCopied(false);
             }, 2000);
-        } catch {
-            if (mounted.current) setError('复制失败，请显示密码后手动复制');
         }
     };
     return (
@@ -139,30 +160,35 @@ function PasswordMemo() {
                 <KeyRound size={18} />
             </div>
             {saved && !editing ? (
-                <div className="memo-secret">
+                <div className="memo-body" key="view">
                     <code className="memo-secret-value">
                         {revealed ? saved : '•'.repeat(Math.min(saved.length, 20))}
                     </code>
-                    <button className="btn btn-sm" onClick={() => setRevealed((value) => !value)}>
-                        {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
-                        {revealed ? '隐藏' : '显示'}
-                    </button>
-                    <button className="btn btn-sm" onClick={() => void copy()}>
-                        {copied ? '已复制' : '复制'}
-                    </button>
-                    <button
-                        className="btn btn-sm"
-                        onClick={() => {
-                            setEditing(true);
-                            setDraft(saved);
-                            setNotice('');
-                        }}
-                    >
-                        修改
-                    </button>
+                    <div className="memo-actions">
+                        <button
+                            className="btn btn-sm"
+                            onClick={() => setRevealed((value) => !value)}
+                        >
+                            {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
+                            {revealed ? '隐藏' : '显示'}
+                        </button>
+                        <button className="btn btn-sm" onClick={() => void copy()}>
+                            {copied ? '已复制' : '复制'}
+                        </button>
+                        <button
+                            className="btn btn-sm"
+                            onClick={() => {
+                                setEditing(true);
+                                setDraft(saved);
+                                setNotice('');
+                            }}
+                        >
+                            修改
+                        </button>
+                    </div>
                 </div>
             ) : (
-                <div className="memo-edit">
+                <div className="memo-body" key="edit">
                     <input
                         type={revealed ? 'text' : 'password'}
                         value={draft}
@@ -174,34 +200,36 @@ function PasswordMemo() {
                             if (e.key === 'Enter' && draft.trim()) void save(draft);
                         }}
                     />
-                    <button
-                        type="button"
-                        className="btn memo-reveal"
-                        aria-label={revealed ? '隐藏密码' : '显示密码'}
-                        onClick={() => setRevealed((value) => !value)}
-                    >
-                        {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        disabled={busy || !draft.trim()}
-                        onClick={() => void save(draft)}
-                    >
-                        <Save size={14} />
-                        保存
-                    </button>
-                    {editing && (
+                    <div className="memo-actions">
                         <button
-                            className="btn"
-                            disabled={busy}
-                            onClick={() => {
-                                setEditing(false);
-                                setDraft('');
-                            }}
+                            type="button"
+                            className="btn btn-sm"
+                            onClick={() => setRevealed((value) => !value)}
                         >
-                            取消
+                            {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
+                            {revealed ? '隐藏' : '显示'}
                         </button>
-                    )}
+                        <button
+                            className="btn btn-sm btn-primary"
+                            disabled={busy || !draft.trim()}
+                            onClick={() => void save(draft)}
+                        >
+                            <Save size={13} />
+                            保存
+                        </button>
+                        {editing && (
+                            <button
+                                className="btn btn-sm"
+                                disabled={busy}
+                                onClick={() => {
+                                    setEditing(false);
+                                    setDraft('');
+                                }}
+                            >
+                                取消
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
             {saved && !editing && (

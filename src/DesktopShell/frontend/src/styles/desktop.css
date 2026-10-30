@@ -702,7 +702,10 @@ strong {
 
 .metric-label > svg,
 .console-panel-heading > svg,
-.theme-option > svg,
+.theme-option > svg {
+    color: var(--primary);
+}
+
 .metric-value {
     display: block;
     font-size: 27px;
@@ -1935,8 +1938,7 @@ p.action-notice {
 }
 .bot-form-grid input:not([type='checkbox']),
 .bot-form-grid textarea,
-.memory-review-grid textarea,
-.memo-edit input {
+.memory-review-grid textarea {
     width: 100%;
 }
 .ui-select {
@@ -3000,45 +3002,32 @@ html.theme-changing *::after {
     border: 1px solid var(--border);
     user-select: all;
 }
-.password-memo .memo-secret {
+/* 查看态与编辑态共用同一结构：文本框在上、按钮排在下；key 切换时做 swap-in 淡入。 */
+.password-memo .memo-body {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    padding: 8px 10px 8px 14px;
-    border: 1px solid color-mix(in oklab, var(--primary) 22%, var(--border));
-    border-radius: 10px;
-    background: color-mix(in oklab, var(--primary) 5%, var(--card));
+    flex-direction: column;
+    gap: 10px;
+    animation: swap-in var(--motion-duration) var(--motion-ease);
 }
-.memo-secret-value {
-    flex: 1 1 auto;
-    min-width: 0;
+.password-memo .memo-secret-value {
+    display: block;
+    min-height: 38px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--card);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.4px;
     user-select: all;
     overflow-wrap: anywhere;
 }
-.memo-edit {
+.password-memo .memo-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-}
-/* 编辑行：输入框与所有按钮统一 38px 高，视觉上是一排等高控件。 */
-.memo-edit input {
-    flex: 1 1 220px;
-    min-width: 0;
-    height: 38px;
-}
-.memo-edit .btn {
-    height: 38px;
-    padding-block: 0;
-}
-.memo-reveal {
-    flex: none;
-    width: 38px;
-    padding-inline: 0;
 }
 .memo-clear {
     margin-top: 10px;

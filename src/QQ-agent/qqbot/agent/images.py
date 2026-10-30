@@ -212,8 +212,15 @@ class ImageReader:
         return item, prepared
 
     async def read(self, account, key, args):
-        if set(args) != {"messageId"} or numeric_id(args.get("messageId")) is None:
-            raise ValueError("请仅提供当前聊天中的 messageId")
+        if set(args) != {"messageId"}:
+            raise ValueError(
+                "参数缺少 messageId：从当前聊天记录里找到图片消息前的 #数字编号，"
+                '以 {"messageId": "#编号"} 重新调用，一次只看一条消息的图片'
+            )
+        if numeric_id(args.get("messageId")) is None:
+            raise ValueError(
+                "messageId 必须是当前聊天记录里图片消息的 #数字编号，不要编造或使用其他聊天的编号"
+            )
         item = self._store.image_message(account, key, args["messageId"])
         if not self._permit():
             raise asyncio.CancelledError()

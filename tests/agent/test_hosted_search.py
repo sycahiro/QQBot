@@ -289,7 +289,12 @@ class SearchClient:
     async def search(self, config, query, permit):
         self.calls.append("local")
         if self.success:
-            return {"results": []}
+            return {
+                "results": [],
+                "mode": "browser",
+                "attempts": [{"engine": "bing", "mode": "browser", "status": "ok"}],
+                "elapsedMs": 5,
+            }
         raise SearchError(
             "local failed",
             [{"engine": e, "mode": "browser", "status": "failed"} for e in ("bing", "baidu")],
@@ -321,7 +326,7 @@ class SearchClient:
 def test_fallback_only_runs_after_local_failure_and_explicit_enable(local, enabled, expect):
     client = SearchClient(local)
     usage = []
-    config = {**DEFAULT_SEARCH, "fallbackEnabled": enabled}
+    config = {**DEFAULT_SEARCH, "fallback": enabled}
     if not local and not enabled:
         with pytest.raises(SearchError):
             asyncio.run(
@@ -338,6 +343,50 @@ def test_fallback_only_runs_after_local_failure_and_explicit_enable(local, enabl
     assert client.calls == expect and len(usage) == int(not local and enabled)
 
 
+def test_model_first_uses_provider_directly_without_touching_local_engines():
+    client = SearchClient()
+    usage = []
+    r = asyncio.run(
+        search_with_fallback(
+            client,
+            {**DEFAULT_SEARCH, "mode": "model"},
+            "query",
+            lambda: True,
+            api(),
+            usage.append,
+        )
+    )
+    assert client.calls == [("hosted", "search-model", "query")]
+    assert r["mode"] == "provider" and [s["engine"] for s in r["attempts"]] == ["model"]
+    assert len(usage) == 1
+
+
+def test_model_first_failure_falls_back_to_local_and_merges_attempts():
+    client = SearchClient(success=True, fail=True)
+    r = asyncio.run(
+        search_with_fallback(
+            client, {**DEFAULT_SEARCH, "mode": "model"}, "query", lambda: True, api()
+        )
+    )
+    assert client.calls == [("hosted", "search-model", "query"), "local"]
+    assert r["mode"] == "browser" and r["results"] == []
+    # 模型失败阶段 + 本地成功阶段并入同一份 attempts。
+    assert [s["engine"] for s in r["attempts"]] == ["model", "bing"]
+    assert r["attempts"][0]["status"] == "failed"
+
+
+def test_model_first_with_both_sources_failing_reports_full_chain():
+    client = SearchClient(fail=True)
+    with pytest.raises(SearchError) as error:
+        asyncio.run(
+            search_with_fallback(
+                client, {**DEFAULT_SEARCH, "mode": "model"}, "query", lambda: True, api()
+            )
+        )
+    assert [s["engine"] for s in error.value.attempts] == ["model", "bing", "baidu"]
+    assert all(s["status"] == "failed" for s in error.value.attempts)
+
+
 def test_failed_hosted_attempt_is_not_retried_and_usage_counts_once():
     client = SearchClient(fail=True)
     usage = []
@@ -345,7 +394,7 @@ def test_failed_hosted_attempt_is_not_retried_and_usage_counts_once():
         asyncio.run(
             search_with_fallback(
                 client,
-                {**DEFAULT_SEARCH, "fallbackEnabled": True},
+                {**DEFAULT_SEARCH, "fallback": True},
                 "query",
                 lambda: True,
                 api(),
@@ -367,7 +416,7 @@ def test_cancelled_local_search_never_triggers_provider_search():
     with pytest.raises(asyncio.CancelledError):
         asyncio.run(
             search_with_fallback(
-                client, {**DEFAULT_SEARCH, "fallbackEnabled": True}, "query", lambda: True, api()
+                client, {**DEFAULT_SEARCH, "fallback": True}, "query", lambda: True, api()
             )
         )
     assert not client.calls
@@ -387,7 +436,7 @@ def test_completed_provider_usage_is_kept_even_if_configuration_changed_before_r
         asyncio.run(
             search_with_fallback(
                 Changed(),
-                {**DEFAULT_SEARCH, "fallbackEnabled": True},
+                {**DEFAULT_SEARCH, "fallback": True},
                 "query",
                 lambda: active[0],
                 api(),
@@ -401,7 +450,7 @@ def test_provider_fallback_still_consumes_only_one_web_tool_budget_slot():
     client = SearchClient()
     usage = []
     tools = WebTools(
-        {**DEFAULT_SEARCH, "enabled": True, "fallbackEnabled": True},
+        {**DEFAULT_SEARCH, "enabled": True, "fallback": True},
         lambda: True,
         client=client,
         fallback_api=api(),
@@ -416,19 +465,21 @@ def test_provider_fallback_still_consumes_only_one_web_tool_budget_slot():
 
 def test_saved_search_binding_is_global_write_only_and_protects_profile_deletion(tmp_path):
     store = GlobalSettings(tmp_path)
-    with pytest.raises(ValueError):
-        store.save("global", {"webSearch": {"fallbackEnabled": True}})
+    # 模型优先必须选配置；本地优先时兜底允许暂不选配置（未配置则不启用模型兜底）。
+    with pytest.raises(ValueError, match="模型搜索优先"):
+        store.save("global", {"webSearch": {"mode": "model"}})
+    store.save("global", {"webSearch": {"fallback": True}})
     saved = store.profile("global", "store", {"id": None, "name": "搜索专用", "api": api()})
     identifier = saved["profiles"][0]["id"]
-    store.save("global", {"webSearch": {"fallbackEnabled": True, "fallbackProfileId": identifier}})
+    store.save("global", {"webSearch": {"fallback": True, "searchProfileId": identifier}})
     assert store.read()["api"]["model"] == "" and "search-secret" not in json.dumps(
         store.read(public=True)
     )
     with pytest.raises(ValueError, match="搜索"):
         store.profile("global", "delete", {"id": identifier})
     with pytest.raises(ValueError):
-        store.save("global", {"webSearch": {"fallbackProfileId": "missing"}})
-    store.save("global", {"webSearch": {"fallbackEnabled": False, "fallbackProfileId": ""}})
+        store.save("global", {"webSearch": {"searchProfileId": "missing"}})
+    store.save("global", {"webSearch": {"fallback": False, "searchProfileId": ""}})
     assert store.profile("global", "delete", {"id": identifier})["profiles"] == []
 
 
@@ -448,7 +499,7 @@ def test_search_fallback_usage_is_counted_in_agent_session_and_chat_model_is_unc
     ][0]["id"]
     settings.save(
         ACCOUNT,
-        {"webSearch": {"enabled": True, "fallbackEnabled": True, "fallbackProfileId": profile}},
+        {"webSearch": {"enabled": True, "fallback": True, "searchProfileId": profile}},
     )
 
     async def local(self, *args):

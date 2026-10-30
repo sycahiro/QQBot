@@ -45,8 +45,9 @@ export interface BotConfig {
         enabled: boolean;
         maxResults: number;
         browse: boolean;
-        fallbackEnabled: boolean;
-        fallbackProfileId: string;
+        mode: 'local' | 'model';
+        fallback: boolean;
+        searchProfileId: string;
     };
     sticker: { enabled: boolean; collectEnabled: boolean; allowPoke: boolean };
     api: {

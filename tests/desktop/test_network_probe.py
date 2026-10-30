@@ -145,7 +145,7 @@ def test_probe_can_use_a_saved_search_profile_from_an_unsaved_search_draft(bridg
     b._web.hosted_search = provider
     r = b.test_web_search(
         None,
-        {"fallbackEnabled": True, "fallbackProfileId": identifier},
+        {"fallback": True, "searchProfileId": identifier},
         {"kind": "search", "value": "查询词"},
     )
     assert (

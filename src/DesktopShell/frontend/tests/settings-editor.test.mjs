@@ -38,8 +38,9 @@ const config = () => ({
         enabled: false,
         maxResults: 6,
         browse: true,
-        fallbackEnabled: false,
-        fallbackProfileId: '',
+        mode: 'local',
+        fallback: true,
+        searchProfileId: '',
     },
     sticker: { enabled: false, collectEnabled: false, allowPoke: false },
 });

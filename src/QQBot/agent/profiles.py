@@ -113,8 +113,8 @@ def manage_profile(store, account, operation, data, defaults, validate_api):
     if operation == "use":
         return store.save(account, {"activeProfileId": identifier, "api": profile["api"]})
     if operation == "delete":
-        if identifier == config["webSearch"]["fallbackProfileId"]:
-            raise ValueError("此配置正被模型搜索回退使用，请先更换搜索配置")
+        if identifier == config["webSearch"]["searchProfileId"]:
+            raise ValueError("此配置正被模型搜索使用，请先更换搜索配置")
         if identifier == config["mediaOptions"]["imageProfileId"]:
             raise ValueError("此配置正被图片理解使用，请先更换对应配置")
         if identifier == config["activeProfileId"]:

@@ -89,7 +89,7 @@ async def test_busy_is_not_reported_as_engine_failure_and_never_starts_provider_
     client = web.WebClient(browser=Busy(), hosted=Hosted())
     with pytest.raises(web.SearchError) as result:
         await web.search_with_fallback(
-            client, {**web.DEFAULT_SEARCH, "fallbackEnabled": True}, "query", lambda: True
+            client, {**web.DEFAULT_SEARCH, "fallback": True}, "query", lambda: True
         )
     assert result.value.code == "browser_busy" and calls == ["bing"]
     assert result.value.attempts[0]["code"] == "browser_busy"
@@ -184,7 +184,7 @@ async def test_malformed_hosted_response_keeps_the_structured_attempt_chain(resp
     with pytest.raises(web.SearchError) as result:
         await web.search_with_fallback(
             Client(),
-            {**web.DEFAULT_SEARCH, "fallbackEnabled": True},
+            {**web.DEFAULT_SEARCH, "fallback": True},
             "query",
             lambda: True,
             {"baseUrl": "https://example.com", "model": "test"},

@@ -87,7 +87,11 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                 <div className="console-panel-heading">
                     <div>
                         <h2>联网搜索</h2>
-                        <p>先搜索 Bing 和百度，均失败后可使用所选模型的原生联网搜索。</p>
+                        <p>
+                            {config.mode === 'model'
+                                ? '先让模型自带的联网搜索出手，失败后自动换本地 Bing/百度。'
+                                : '先本地搜索 Bing 和百度（免费、无 Key），失败后自动换模型搜索。'}
+                        </p>
                     </div>
                     <Globe size={18} />
                 </div>
@@ -100,6 +104,51 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         />
                         允许机器人联网
                     </label>
+                    <div className="bot-field form-wide">
+                        <span>搜索方式</span>
+                        <Select
+                            label="搜索方式"
+                            value={config.mode}
+                            onChange={(value) => change({ mode: value as 'local' | 'model' })}
+                            options={[
+                                { value: 'local', label: '本地搜索优先（Bing / 百度，免费）' },
+                                { value: 'model', label: '模型搜索优先（走服务商联网）' },
+                            ]}
+                        />
+                    </div>
+                    <label className="form-wide form-check">
+                        <input
+                            type="checkbox"
+                            checked={config.fallback}
+                            onChange={(e) => change({ fallback: e.target.checked })}
+                        />
+                        主搜索失败时自动换另一种（兜底）
+                    </label>
+                    <div
+                        className="bot-field form-wide"
+                        hidden={!(config.fallback || config.mode === 'model')}
+                    >
+                        <span>搜索模型配置</span>
+                        <Select
+                            label="搜索模型配置"
+                            value={config.searchProfileId}
+                            onChange={(value) => change({ searchProfileId: value })}
+                            options={[
+                                { value: '', label: '请选择已保存的配置' },
+                                ...state.config.profiles.map((profile) => ({
+                                    value: profile.id,
+                                    label: `${profile.name} · ${profile.api.model || '未填写模型'} · ${profile.api.protocol}`,
+                                })),
+                            ]}
+                        />
+                        <small>
+                            {config.mode === 'model' && !config.searchProfileId
+                                ? '模型搜索优先时必须选择配置。'
+                                : state.config.profiles.length
+                                  ? '所选服务商和模型须支持原生联网搜索；不会切换聊天模型。'
+                                  : '先在模型 API 页面保存支持联网搜索的配置。'}
+                        </small>
+                    </div>
                     <label className="form-wide form-check">
                         <input
                             type="checkbox"
@@ -119,35 +168,6 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                                 label: `${n} 条`,
                             }))}
                         />
-                    </div>
-                    <label className="form-wide form-check">
-                        <input
-                            type="checkbox"
-                            checked={config.fallbackEnabled}
-                            disabled={!state.config.profiles.length}
-                            onChange={(e) => change({ fallbackEnabled: e.target.checked })}
-                        />
-                        本地搜索失败时使用模型搜索
-                    </label>
-                    <div className="bot-field form-wide">
-                        <span>搜索模型配置</span>
-                        <Select
-                            label="搜索模型配置"
-                            value={config.fallbackProfileId}
-                            onChange={(value) => change({ fallbackProfileId: value })}
-                            options={[
-                                { value: '', label: '请选择已保存的配置' },
-                                ...state.config.profiles.map((profile) => ({
-                                    value: profile.id,
-                                    label: `${profile.name} · ${profile.api.model || '未填写模型'} · ${profile.api.protocol}`,
-                                })),
-                            ]}
-                        />
-                        <small>
-                            {state.config.profiles.length
-                                ? '所选服务商和模型须支持原生联网搜索；不会切换聊天模型。'
-                                : '先在模型 API 页面保存支持联网搜索的配置。'}
-                        </small>
                     </div>
                 </div>
                 <div className="card-save-footer save-actions">

@@ -143,12 +143,15 @@ function PasswordMemo() {
                     <code className="memo-secret-value">
                         {revealed ? saved : '•'.repeat(Math.min(saved.length, 20))}
                     </code>
-                    <button onClick={() => setRevealed((value) => !value)}>
+                    <button className="btn btn-sm" onClick={() => setRevealed((value) => !value)}>
                         {revealed ? <EyeOff size={13} /> : <Eye size={13} />}
                         {revealed ? '隐藏' : '显示'}
                     </button>
-                    <button onClick={() => void copy()}>{copied ? '已复制' : '复制'}</button>
+                    <button className="btn btn-sm" onClick={() => void copy()}>
+                        {copied ? '已复制' : '复制'}
+                    </button>
                     <button
+                        className="btn btn-sm"
                         onClick={() => {
                             setEditing(true);
                             setDraft(saved);
@@ -173,22 +176,23 @@ function PasswordMemo() {
                     />
                     <button
                         type="button"
-                        className="btn btn-icon memo-reveal"
+                        className="btn memo-reveal"
                         aria-label={revealed ? '隐藏密码' : '显示密码'}
                         onClick={() => setRevealed((value) => !value)}
                     >
                         {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                     <button
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary"
                         disabled={busy || !draft.trim()}
                         onClick={() => void save(draft)}
                     >
-                        <Save size={13} />
+                        <Save size={14} />
                         保存
                     </button>
                     {editing && (
                         <button
+                            className="btn"
                             disabled={busy}
                             onClick={() => {
                                 setEditing(false);

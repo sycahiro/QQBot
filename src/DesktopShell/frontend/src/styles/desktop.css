@@ -538,8 +538,6 @@ strong {
 .workspace-model {
     max-width: 240px;
     overflow: hidden;
-    background: var(--muted);
-    border-color: var(--border);
 }
 .workspace-model .status-dot {
     flex-shrink: 0;

@@ -1697,7 +1697,7 @@ p.action-notice {
     color: var(--primary);
 }
 .session-spinner {
-    animation: market-spin var(--motion-cycle) linear infinite;
+    animation: qq-scan-spin var(--motion-cycle) linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
     .session-spinner {

@@ -515,20 +515,24 @@ strong {
 
 .workspace-snowluma.is-connected,
 .workspace-account.is-connected,
-.workspace-reply.is-on {
+.workspace-reply.is-on,
+.workspace-model.is-connected {
     color: var(--log-success);
     background: color-mix(in oklab, var(--success) 10%, var(--card));
     border-color: color-mix(in oklab, var(--success) 12%, transparent);
 }
 .workspace-snowluma.is-error,
-.workspace-account.is-error {
+.workspace-account.is-error,
+.workspace-model.is-error {
     color: var(--log-error);
     background: color-mix(in oklab, var(--destructive) 8%, var(--card));
 }
 .workspace-snowluma.is-connected .status-dot,
 .workspace-snowluma.is-error .status-dot,
 .workspace-account.is-connected .status-dot,
-.workspace-reply.is-on .status-dot {
+.workspace-reply.is-on .status-dot,
+.workspace-model.is-connected .status-dot,
+.workspace-model.is-error .status-dot {
     background: currentColor;
 }
 .workspace-model {

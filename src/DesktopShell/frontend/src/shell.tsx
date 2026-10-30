@@ -85,6 +85,8 @@ export function DesktopShell() {
         null,
     );
     const [snowStage, setSnowStage] = useState<string | null>(null);
+    // 模型连通性：打开时灰点，自动测一次，成功绿/失败红（复用旁边气泡的统一样式）。
+    const [modelProbe, setModelProbe] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
     const current = pages.find((item) => item.id === page)!;
     const connected = Boolean(connection?.connected && connection.account?.uin);
     const agentCurrent = connected && status?.account === connection?.account?.uin;
@@ -135,6 +137,24 @@ export function DesktopShell() {
             clearInterval(timer);
         };
     }, []);
+    useEffect(() => {
+        const account = status?.account;
+        if (!info || !account || !status?.model) return;
+        let active = true;
+        setModelProbe('testing');
+        const run = async () => {
+            try {
+                const result = await window.pywebview!.api.test_model_connection(account);
+                if (active) setModelProbe(result.ok ? 'ok' : 'fail');
+            } catch {
+                if (active) setModelProbe('fail');
+            }
+        };
+        void run();
+        return () => {
+            active = false;
+        };
+    }, [info, status?.account, status?.model]);
     useEffect(() => {
         resetSettingsEditor();
     }, [connection?.connected, connection?.account?.uin, connection?.account?.pid]);
@@ -197,9 +217,21 @@ export function DesktopShell() {
                     </span>
                     <div className="topbar-actions">
                         <div className="workspace-status" aria-label="当前运行状态">
-                            <span className="workspace-badge workspace-model">
+                            <span
+                                className={
+                                    'workspace-badge workspace-model' +
+                                    (modelProbe === 'ok' ? ' is-connected' : '') +
+                                    (modelProbe === 'fail' ? ' is-error' : '')
+                                }
+                                aria-label="模型连接状态"
+                            >
                                 <span
-                                    className={'status-dot' + (status?.model ? '' : ' is-muted')}
+                                    className={
+                                        'status-dot' +
+                                        (modelProbe === 'ok' || modelProbe === 'fail'
+                                            ? ''
+                                            : ' is-muted')
+                                    }
                                 />
                                 <StatusSwap className="workspace-model-name" text={modelLabel} />
                             </span>

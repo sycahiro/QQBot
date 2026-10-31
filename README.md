@@ -277,6 +277,19 @@ SOFTWARE.
 
 ### 其他组件
 
-Python、Node.js、pywebview、React 和其他依赖均按各自的许可使用，安装后的依赖包中包含相应许可或版权文件。应用的"系统设置 → 关于"页面可查看本机已安装组件的版本和许可元数据；该列表不是完整的第三方版权与许可文本汇总。Microsoft Edge WebView2 运行时和 QQ 适用各自的服务及许可条款。
+本项目运行时使用的主要第三方组件及许可，逐项列明（均允许随本项目分发，义务仅为保留各自的版权与许可声明，安装后的依赖包内已包含对应文件）：
+
+| 组件 | 用途 | 许可 |
+|---|---|---|
+| Python | 后端运行时 | PSF License |
+| Node.js | 构建与运行时 | MIT |
+| pywebview | 桌面窗口外壳（Windows 上经 WebView2 渲染） | BSD 3-Clause |
+| pythonnet | .NET 互操作（WebView2 接入） | MIT |
+| httpx | HTTP 客户端（联网搜索、网页读取） | BSD 3-Clause |
+| Pillow | 图像处理 | MIT-CMU |
+| React / React-DOM | 界面框架 | MIT |
+| lucide-react | 界面图标库 | ISC |
+
+构建期工具（Vite、TypeScript、Prettier、pytest、ruff 等）只用于开发与安装，不随应用分发，适用各自许可。应用的"系统设置 → 关于"页面可查看本机已安装组件的版本和许可元数据；该列表不是完整的第三方版权与许可文本汇总。Microsoft Edge WebView2 运行时和 QQ 适用各自的服务及许可条款。
 
 QQBot 是独立项目，与腾讯及 QQ 没有隶属关系。使用前请自行确认符合所用平台的相关条款。

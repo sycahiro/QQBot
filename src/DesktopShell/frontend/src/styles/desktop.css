@@ -1959,8 +1959,9 @@ p.action-notice {
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 38px;
-    padding: 10px 38px 10px 12px;
+    /* 恰好 38px，与全局 input 的 min-height 一致，避免下拉框比文本框高。 */
+    height: 38px;
+    padding: 0 38px 0 12px;
     text-align: left;
     font: inherit;
 }
@@ -1976,7 +1977,8 @@ p.action-notice {
     border: 0;
     background: transparent;
     border-radius: 8px;
-    padding: 10px 38px 10px 12px;
+    height: 38px;
+    padding: 0 38px 0 12px;
     outline: none;
 }
 .ui-select button.ui-select-arrow {

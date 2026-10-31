@@ -87,7 +87,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                 <div className="console-panel-heading">
                     <div>
                         <h2>联网搜索</h2>
-                        <p>通过 Bing 官方 RSS 订阅通道搜索（免 Key、免浏览器、无验证码）；搜索失败会如实告知没搜到。</p>
+                        <p>通过 Bing 官方 RSS 订阅通道搜索；搜索失败会如实告知没搜到。</p>
                     </div>
                     <Globe size={18} />
                 </div>

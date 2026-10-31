@@ -36,7 +36,7 @@ SOFTWARE.
 
 ### AstrBot
 
-[AstrBotDevs/AstrBot](https://github.com/AstrBotDevs/AstrBot)：多平台 LLM 聊天机器人框架。本项目仅出于学习研究目的阅读过其公开源码与文档，了解同类项目的实现做法；**未使用其中任何组件，未复制、未引用、未派生其任何代码**，两者在代码层面没有任何关联，本仓库不构成其衍生作品。AstrBot 使用 GNU Affero General Public License v3.0（AGPL-3.0）许可，本仓库不受其约束。
+[AstrBotDevs/AstrBot](https://github.com/AstrBotDevs/AstrBot)：多平台 LLM 聊天机器人框架。本项目仅出于学习研究目的阅读过其公开源码与文档，重点研究了其中 QQ 官方机器人（QQ 开放平台）与微信官方机器人相关适配器的实现，一度考虑将其引入，但最终没有把这两部分（或其任何其他部分）加入本项目。因此：**未使用其中任何组件，未复制、未引用、未派生其任何代码**，两者在代码层面没有任何关联，本仓库不构成其衍生作品。AstrBot 使用 GNU Affero General Public License v3.0（AGPL-3.0）许可，本仓库不受其约束。
 
 ## SnowLuma
 

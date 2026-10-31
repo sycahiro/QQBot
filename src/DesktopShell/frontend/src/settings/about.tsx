@@ -101,7 +101,7 @@ export function About({ info }: { info: DesktopInfo | null }) {
                     后，可以管理自动回复、聊天存档、记忆与表情库。
                 </p>
                 <p className="about-intro">
-                    设置与记录保存在本机；使用模型或联网搜索时，相关请求会发送到您配置的服务。
+                    设置与记录保存在本机；使用模型、联网搜索或图片理解时，相关内容会发送到对应的模型服务或搜索引擎。
                 </p>
             </section>
             <section className="ui-card console-panel">
@@ -202,10 +202,6 @@ export function About({ info }: { info: DesktopInfo | null }) {
                         </button>
                         <dd>{info?.snowlumaVersion ?? '无法读取'}</dd>
                     </div>
-                    <div>
-                        <dt>联网浏览器</dt>
-                        <dd>系统 Microsoft Edge</dd>
-                    </div>
                 </dl>
             </section>
             <section className="ui-card console-panel">
@@ -276,7 +272,7 @@ export function About({ info }: { info: DesktopInfo | null }) {
                         </span>
                     </div>
                     <p>
-                        由 SnowLumaDevs 开发，QQBot
+                        由 SnowLuma 项目团队开发，QQBot
                         通过独立进程与其通信。该发行包包含专有组件，适用其自身许可和最终用户许可协议。
                     </p>
                     <small>
@@ -294,9 +290,9 @@ export function About({ info }: { info: DesktopInfo | null }) {
                 </div>
                 <p className="about-intro">
                     机器人功能设计参考了 QQ Agent，内置人设卡改编自 qq-bridge
-                    的小鲸鱼角色卡，相关许可声明见项目 README 的
-                    「许可与第三方声明」一节。感谢 SnowLuma
-                    和其他第三方组件的维护者；各项目的名称、代码和许可归其各自所有者。
+                    的小鲸鱼角色卡，实现思路亦研究参考过 AstrBot
+                    等开源项目，相关许可声明见项目 README 的「许可与第三方声明」一节。感谢
+                    SnowLuma 和其他第三方组件的维护者；各项目的名称、代码和许可归其各自所有者。
                 </p>
             </section>
         </>

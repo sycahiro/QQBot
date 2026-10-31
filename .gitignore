@@ -23,6 +23,7 @@
 /upstream/
 /backup/
 /tools/node/
+/参考/
 # 便携 CPython 本体不入库，依赖清单位于 tools/requirements.txt
 /tools/python/
 

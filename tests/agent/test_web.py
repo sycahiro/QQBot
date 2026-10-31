@@ -82,7 +82,7 @@ def test_public_web_urls_reject_local_paths_private_addresses_and_credentials(ur
 
 def test_query_and_rss_parser_preserve_sources_without_markup():
     assert sanitize_query(" [CQ:at,qq=1] Python\n 官网 ") == "Python 官网"
-    assert parse_rss(rss(("Python <b>官网</b>", "https://www.python.org/", "官方 <i>资料</i>")), 6) == [
+    assert parse_rss(rss(("Python <b>官网</b>", "https://www.python.org/", "官方 <i>资料</i>"))) == [
         {"title": "Python 官网", "url": "https://www.python.org/", "snippet": "官方 资料"}
     ]
     parser = TextParser()
@@ -112,7 +112,7 @@ def test_bing_rss_receives_the_encoded_query_and_no_api_key():
     )
 
 
-def test_rss_results_are_validated_deduplicated_and_truncated():
+def test_rss_results_are_validated_and_deduplicated():
     body = rss(
         ("First", "https://example.com/one", "one"),
         ("Second", "https://example.com/two", "two"),
@@ -120,10 +120,17 @@ def test_rss_results_are_validated_deduplicated_and_truncated():
         ("Private", "http://127.0.0.1/secret", "skip"),
         ("NoLink", "", "skip"),
     )
-    assert parse_rss(body, 2) == [
+    assert parse_rss(body) == [
         {"title": "First", "url": "https://example.com/one", "snippet": "one"},
         {"title": "Second", "url": "https://example.com/two", "snippet": "two"},
     ]
+
+
+def test_rss_returns_every_item_the_feed_contains():
+    body = rss(
+        *((f"Item {n}", f"https://example.com/{n}", f"snippet {n}") for n in range(12))
+    )
+    assert len(parse_rss(body)) == 12
 
 
 def test_rss_failures_surface_as_a_single_failed_attempt():

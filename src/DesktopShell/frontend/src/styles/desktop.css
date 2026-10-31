@@ -1259,15 +1259,20 @@ p.action-notice {
     gap: 8px;
     flex: 1;
     min-width: 0;
+    box-sizing: border-box;
+    /* 外壳定高 38px（border-box，含边框），与全局 input/.ui-select 完全一致。 */
+    height: 38px;
     border: 1px solid var(--border);
     border-radius: 9px;
-    padding: 9px 12px;
+    padding: 0 12px;
     color: var(--muted-foreground);
     background: var(--card);
 }
 .archive-search-input input {
     flex: 1;
     min-width: 0;
+    /* 抵消全局 input 的 min-height:38px，高度交给外壳统一控制。 */
+    min-height: 0;
     border: 0;
     outline: 0;
     background: transparent;

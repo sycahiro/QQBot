@@ -7,7 +7,6 @@ packaging
 psutil
 httpx
 Pillow
-playwright
 
 # 开发检查工具
 pytest

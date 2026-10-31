@@ -47,7 +47,7 @@ QQBot/
 - 64 位 Windows 10 或 Windows 11。
 - 已安装并登录的 Windows 桌面版 QQ。QQ 版本与运行环境的兼容性请查看 [SnowLuma 文档](https://snowluma.github.io/)。
 - 一个可用的模型 API（地址、模型名称和密钥）。程序支持 Chat Completions、Responses 和 Anthropic 消息协议，具体能力取决于所选服务。
-- 安装过程需要网络；联网搜索直接请求 Bing 的 RSS 订阅接口（纯 HTTP），不需要浏览器，也不需要搜索服务的 API 密钥。
+- 安装过程需要网络。联网搜索直接请求 Bing 的 RSS 订阅接口（纯 HTTP），不需要浏览器，也不需要搜索服务的 API 密钥。
 
 ## 安装教程
 
@@ -190,6 +190,7 @@ data/services/snowluma/             SnowLuma 引擎的家目录（引擎自己�
 
 ```powershell
 tools\python\python.exe -m pytest -q tests
+tools\python\Scripts\ruff.exe check src\QQBot --config ruff.toml
 ```
 
 运行前端类型检查和测试：

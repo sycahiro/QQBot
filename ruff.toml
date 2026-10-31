@@ -20,5 +20,4 @@ ignore = [
 # done()/memory.append 均在同一循环迭代内立即调用，闭包不会读到下一次迭代的值。
 "src/QQBot/storage/migration.py" = ["B023"]
 # 浏览器/桥接边界故意宽捕获：外部网页与第三方异常不可枚举，失败转结构化错误或尽力清理。
-"src/QQBot/agent/web_browser.py" = ["BLE001"]
 "src/QQBot/desktop/bridge.py" = ["BLE001"]

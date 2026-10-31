@@ -109,54 +109,34 @@ def test_header_status_exposes_only_current_model_and_updates_after_save(bridge)
     assert b.get_agent_status()["model"] == "model-two"
 
 
-def test_probe_can_use_a_saved_search_profile_from_an_unsaved_search_draft(bridge):
+def test_probe_uses_the_rss_search_channel_from_the_unsaved_draft(bridge):
     b, settings, _ = bridge
-    saved = settings.profile(
-        "global",
-        "store",
-        {
-            "id": None,
-            "name": "搜索",
-            "api": {
-                "baseUrl": "https://search.example",
-                "model": "search-model",
-                "apiKey": "search-secret",
-            },
-        },
-    )
-    identifier = saved["profiles"][0]["id"]
     before = settings.values()
     calls = []
 
-    async def local(*args):
-        raise SearchError("blocked", [{"engine": e, "status": "failed"} for e in ("bing", "baidu")])
-
-    async def provider(api, query, permit):
-        assert permit() and api["apiKey"] == "search-secret"
+    async def search(config, query, permit):
+        assert permit() and config["maxResults"] == 4 and "searchProfileId" not in config
         calls.append(query)
         return {
-            "content": "联网结果",
-            "model": "search-model",
-            "results": [],
-            "usage": {"promptTokens": 1, "completionTokens": 1, "totalTokens": 2, "calls": 1},
+            "engine": "bing",
+            "mode": "rss",
+            "results": [{"title": "t", "url": "https://example.com/", "snippet": "s"}],
+            "attempts": [{"engine": "bing", "mode": "rss", "status": "ok", "count": 1}],
         }
 
-    b._web.search = local
-    b._web.hosted_search = provider
+    b._web.search = search
     r = b.test_web_search(
         None,
-        {"fallback": True, "searchProfileId": identifier},
+        {"maxResults": 4},
         {"kind": "search", "value": "查询词"},
     )
     assert (
         r["ok"]
         and r["success"]
-        and r["result"]["engine"] == "model"
-        and len(r["result"]["attempts"]) == 3
+        and r["result"]["engine"] == "bing"
+        and len(r["result"]["attempts"]) == 1
     )
-    assert (
-        settings.values() == before and calls == ["查询词"] and "search-secret" not in json.dumps(r)
-    )
+    assert settings.values() == before and calls == ["查询词"]
 
 
 @pytest.mark.parametrize(

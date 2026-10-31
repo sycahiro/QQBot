@@ -9,7 +9,7 @@ from ..desktop.paths import save_state
 from .config import DEFAULTS, GLOBAL_FIELDS, merge_config, validate, validate_api
 from .media_models import FEATURES
 from .profiles import check_api, manage_profile, public_config
-from .web import DEFAULT_SEARCH, merge_search, resolve_search_api
+from .web import DEFAULT_SEARCH, merge_search
 
 MEDIA_FIELDS = frozenset({"vision", "visionModel", "sendImages"})
 
@@ -31,8 +31,16 @@ class GlobalSettings:
                     if not isinstance(raw, dict) or GLOBAL_FIELDS - set(raw) - {"defaultPersona", "ownerQQ"}:
                         raise ValueError()
                     config.update(raw)
-                    # webSearch 结构演进时按默认值补齐缺失字段，避免整份设置判为损坏。
-                    config["webSearch"] = {**DEFAULT_SEARCH, **config["webSearch"]}
+                    # webSearch 结构演进时按默认值补齐缺失字段，并丢弃已废弃的
+                    # 旧字段（mode/fallback/searchProfileId），避免整份设置判为损坏。
+                    config["webSearch"] = {
+                        **DEFAULT_SEARCH,
+                        **{
+                            key: value
+                            for key, value in config["webSearch"].items()
+                            if key in DEFAULT_SEARCH
+                        },
+                    }
                     validate(config)
                 except (ValueError, TypeError, KeyError, OSError) as error:
                     raise ValueError("全局设置无法读取，原文件已保留。删除 runtime/settings/global.json 可重置全局设置为默认值，原全局设置将丢失") from error
@@ -75,5 +83,4 @@ class GlobalSettings:
     def check_search(self, scope, draft):
         config = self.read(scope)
         config["webSearch"] = merge_search(config["webSearch"], draft)
-        resolve_search_api(config)
         return config["webSearch"]

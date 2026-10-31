@@ -13,7 +13,7 @@ export function sessionOutcome(session: Session) {
     return statusNames[session.status];
 }
 export function requestCount(session: Session) {
-    // Usage counts successful billed responses, including hosted-search fallback.
+    // Usage counts successful billed responses.
     // Attempt records additionally cover rejected, cancelled and in-flight calls.
     return (
         session.usage.calls +

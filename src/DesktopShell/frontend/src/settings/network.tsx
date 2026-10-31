@@ -87,11 +87,7 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                 <div className="console-panel-heading">
                     <div>
                         <h2>联网搜索</h2>
-                        <p>
-                            {config.mode === 'model'
-                                ? '先让模型自带的联网搜索出手，失败后自动换本地 Bing/百度。'
-                                : '先本地搜索 Bing 和百度（免费、无 Key），失败后自动换模型搜索。'}
-                        </p>
+                        <p>通过 Bing 官方 RSS 订阅通道搜索（免 Key、免浏览器、无验证码）；搜索失败会如实告知没搜到。</p>
                     </div>
                     <Globe size={18} />
                 </div>
@@ -104,51 +100,6 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         />
                         允许机器人联网
                     </label>
-                    <div className="bot-field form-wide">
-                        <span>搜索方式</span>
-                        <Select
-                            label="搜索方式"
-                            value={config.mode}
-                            onChange={(value) => change({ mode: value as 'local' | 'model' })}
-                            options={[
-                                { value: 'local', label: '本地搜索优先（Bing / 百度，免费）' },
-                                { value: 'model', label: '模型搜索优先（走服务商联网）' },
-                            ]}
-                        />
-                    </div>
-                    <label className="form-wide form-check">
-                        <input
-                            type="checkbox"
-                            checked={config.fallback}
-                            onChange={(e) => change({ fallback: e.target.checked })}
-                        />
-                        主搜索失败时自动换另一种（兜底）
-                    </label>
-                    <div
-                        className="bot-field form-wide"
-                        hidden={!(config.fallback || config.mode === 'model')}
-                    >
-                        <span>搜索模型配置</span>
-                        <Select
-                            label="搜索模型配置"
-                            value={config.searchProfileId}
-                            onChange={(value) => change({ searchProfileId: value })}
-                            options={[
-                                { value: '', label: '请选择已保存的配置' },
-                                ...state.config.profiles.map((profile) => ({
-                                    value: profile.id,
-                                    label: `${profile.name} · ${profile.api.model || '未填写模型'} · ${profile.api.protocol}`,
-                                })),
-                            ]}
-                        />
-                        <small>
-                            {config.mode === 'model' && !config.searchProfileId
-                                ? '模型搜索优先时必须选择配置。'
-                                : state.config.profiles.length
-                                  ? '所选服务商和模型须支持原生联网搜索；不会切换聊天模型。'
-                                  : '先在模型 API 页面保存支持联网搜索的配置。'}
-                        </small>
-                    </div>
                     <label className="form-wide form-check">
                         <input
                             type="checkbox"
@@ -158,9 +109,9 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         允许读取网页正文
                     </label>
                     <div className="bot-field">
-                        <span>本地搜索结果条数</span>
+                        <span>搜索结果条数</span>
                         <Select
-                            label="本地搜索结果条数"
+                            label="搜索结果条数"
                             value={String(config.maxResults)}
                             onChange={(value) => change({ maxResults: Number(value) })}
                             options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
@@ -249,12 +200,6 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                                         {result.message}
                                     </p>
                                 )}
-                                {result.result?.mode === 'provider' && (
-                                    <p className="action-notice">
-                                        模型搜索 · {result.result.model} ·{' '}
-                                        {result.result.usage?.totalTokens ?? 0} Token
-                                    </p>
-                                )}
                                 {result.result?.results?.map((item, index) => (
                                     <article key={item.url} className="network-source">
                                         <strong>
@@ -306,16 +251,10 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                                                         {index + 1}
                                                     </span>
                                                     <div className="network-attempt-info">
-                                                        <strong>
-                                                            {attempt.engine === 'model'
-                                                                ? `模型搜索${attempt.model ? ' · ' + attempt.model : ''}`
-                                                                : `${attempt.engine === 'bing' ? 'Bing' : '百度'} · ${attempt.mode === 'direct' ? '直接读取' : '浏览器加载'}`}
-                                                        </strong>
+                                                        <strong>Bing · RSS 搜索</strong>
                                                         <p>
                                                             {attempt.status === 'ok'
-                                                                ? attempt.engine === 'model'
-                                                                    ? '已取得联网回答'
-                                                                    : `有效结果 ${attempt.count ?? 0} 条`
+                                                                ? `有效结果 ${attempt.count ?? 0} 条`
                                                                 : attempt.reason ||
                                                                   '未取得有效结果'}
                                                         </p>

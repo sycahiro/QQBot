@@ -23,9 +23,7 @@ from ..agent.stickers import collect_message
 from ..agent.web import (
     SearchError,
     WebClient,
-    resolve_search_api,
     sanitize_query,
-    search_with_fallback,
     web_url,
 )
 from ..qq.discovery import DiscoveryError
@@ -753,7 +751,6 @@ class DesktopBridge:
                 def permit():
                     return self._globals().values() == source
 
-                snapshot = {**source, "webSearch": config}
             else:
                 if not isinstance(account, str):
                     raise ValueError("请先连接机器人账号")
@@ -766,12 +763,10 @@ class DesktopBridge:
                 def permit():
                     return self._active_account() == selected
 
-                snapshot = {**self._settings.read(selected), "webSearch": config}
-            api = resolve_search_api(snapshot)
             started = time.monotonic()
             try:
                 result = asyncio.run(
-                    search_with_fallback(self._web, config, value, permit, api)
+                    self._web.search(config, value, permit)
                     if kind == "search"
                     else self._web.fetch(value, permit)
                 )

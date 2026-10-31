@@ -30,7 +30,7 @@ from .queries import MessageQueries
 from .sender import DeliveryError, Sender
 from .stickers import StickerTools
 from .trigger import should_trigger
-from .web import SearchError, WebTools, resolve_search_api
+from .web import SearchError, WebTools
 
 logger = logging.getLogger(__name__)
 CONTROL_TIMEOUT = 10
@@ -655,25 +655,12 @@ class AgentService:
         if config["webSearch"]["enabled"]:
             tools += [SEARCH_TOOL] + ([FETCH_TOOL] if config["webSearch"]["browse"] else [])
 
-        def charge_search(usage):
-            for field, value in usage.items():
-                session["usage"][field] += value
-            self._sessions.save(session)
-
-        search_api = resolve_search_api(config)
-
         def search_permit():
             if not self._permit(account, key, epoch):
                 return False
-            current = self._settings.read(account)
-            return (
-                current["webSearch"] == config["webSearch"]
-                and resolve_search_api(current) == search_api
-            )
+            return self._settings.read(account)["webSearch"] == config["webSearch"]
 
-        web = WebTools(
-            config["webSearch"], search_permit, fallback_api=search_api, on_usage=charge_search
-        )
+        web = WebTools(config["webSearch"], search_permit)
         outgoing = OutgoingImages(
             lambda: self._image_send_permit(account, key, epoch),
             lambda args, prepared: self._send(account, key, args, epoch, session, image=prepared),

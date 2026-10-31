@@ -392,13 +392,12 @@ declare global {
 }
 
 interface NetworkAttempt {
-    engine: 'bing' | 'baidu' | 'model';
-    mode: 'direct' | 'browser' | 'provider';
+    engine: 'bing';
+    mode: 'rss';
     status: string;
     reason?: string;
     elapsedMs?: number;
     count?: number;
-    model?: string;
 }
 export interface NetworkProbe {
     success: boolean;
@@ -408,16 +407,14 @@ export interface NetworkProbe {
     message?: string;
     attempts?: NetworkAttempt[];
     result?: {
-        engine?: 'bing' | 'baidu' | 'model';
-        mode?: 'direct' | 'browser' | 'provider';
+        engine?: 'bing';
+        mode?: 'rss';
         attempts?: NetworkAttempt[];
         results?: { title: string; url: string; snippet: string }[];
         title?: string;
         url?: string;
         content?: string;
         truncated?: boolean;
-        model?: string;
-        usage?: { totalTokens: number; calls: number };
     };
     count?: number;
     title?: string;

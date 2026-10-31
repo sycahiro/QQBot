@@ -10,46 +10,55 @@ from test_agent import ACCOUNT, OTHER, packet, result, wait
 from QQBot.agent.config import SettingsStore
 from QQBot.agent.web import (
     DEFAULT_SEARCH,
+    SearchError,
     WebClient,
     WebTools,
     merge_search,
-    parse_bing,
+    parse_rss,
     sanitize_query,
-    search_results,
     validate_search,
     web_url,
 )
 from QQBot.agent.web_pages import TextParser
 from QQBot.storage.database import Database
 
-HTML = '<html><title>Search</title><li class="b_algo"><h2><a href="https://www.python.org/">Python 官网</a></h2><p>官方资料</p></li></html>'
-
 
 async def resolve(host):
     return "93.184.216.34"
 
 
-class FixtureBrowser:
-    def __init__(self, handler):
-        self.handler = handler
-
-    async def render(self, engine, url, permit):
-        result = self.handler(httpx.Request("GET", url))
-        if result.status_code != 200:
-            raise ValueError("Search website rejected the request")
-        return {"url": url, "text": result.text}
-
-
 def client(handler):
-    return WebClient(
-        transport=httpx.MockTransport(handler), resolver=resolve, browser=FixtureBrowser(handler)
-    )
+    return WebClient(transport=httpx.MockTransport(handler), resolver=resolve)
 
 
-def response(html=HTML):
+def response(html=None):
     return httpx.Response(
-        200, headers={"content-type": "text/html; charset=utf-8"}, content=html.encode()
+        200,
+        headers={"content-type": "text/html; charset=utf-8"},
+        content=(html or '<html><title>Search</title><p>Readable text</p></html>').encode(),
     )
+
+
+def rss(*items):
+    entries = "".join(
+        f"<item><title>{t}</title><link>{u}</link><description>{s}</description></item>"
+        for t, u, s in items
+    )
+    return f"<rss><channel>{entries}</channel></rss>"
+
+
+RSS = rss(("Python 官网", "https://www.python.org/", "官方资料"))
+
+
+def rss_response(body=RSS):
+    return httpx.Response(
+        200,
+        headers={"content-type": "application/rss+xml; charset=utf-8"},
+        content=body.encode(),
+    )
+
+
+HTML = '<html><title>Search</title><p>Readable text</p></html>'
 
 
 @pytest.mark.parametrize(
@@ -71,10 +80,10 @@ def test_public_web_urls_reject_local_paths_private_addresses_and_credentials(ur
         web_url(url)
 
 
-def test_query_and_bing_parser_preserve_sources_without_script_markup():
+def test_query_and_rss_parser_preserve_sources_without_markup():
     assert sanitize_query(" [CQ:at,qq=1] Python\n 官网 ") == "Python 官网"
-    assert parse_bing(HTML, 6) == [
-        {"title": "Python 官网", "url": "https://www.python.org/", "snippet": "官方资料"}
+    assert parse_rss(rss(("Python <b>官网</b>", "https://www.python.org/", "官方 <i>资料</i>")), 6) == [
+        {"title": "Python 官网", "url": "https://www.python.org/", "snippet": "官方 资料"}
     ]
     parser = TextParser()
     parser.feed(
@@ -83,61 +92,68 @@ def test_query_and_bing_parser_preserve_sources_without_script_markup():
     assert parser.text() == "正文\n你好" and "".join(parser.title) == "页面"
 
 
-def test_bing_browser_receives_the_encoded_query_and_no_api_key():
+def test_bing_rss_receives_the_encoded_query_and_no_api_key():
     requests = []
 
     def handler(request):
         requests.append(request)
-        return response()
+        return rss_response()
 
     r = asyncio.run(
-        client(handler).search(
-            {**DEFAULT_SEARCH, "apiKey": "never-send-to-bing"}, "Python 官网", lambda: True
-        )
+        client(handler).search({**DEFAULT_SEARCH, "apiKey": "never-send-to-bing"}, "Python 官网", lambda: True)
     )
-    assert r["results"][0]["url"] == "https://www.python.org/"
-    assert requests[0].url.path == "/search" and len(requests) == 1
-    assert requests[0].url.host == "cn.bing.com"
+    assert r["results"] == [{"title": "Python 官网", "url": "https://www.python.org/", "snippet": "官方资料"}]
+    assert r["engine"] == "bing" and r["mode"] == "rss"
+    assert len(requests) == 1
+    assert requests[0].url.host == "www.bing.com" and requests[0].url.path == "/search"
+    assert requests[0].url.params["format"] == "rss"
     assert (
         "authorization" not in requests[0].headers and requests[0].url.params["q"] == "Python 官网"
     )
 
 
-def test_baidu_address_is_independent_and_receives_the_original_query():
-    requests = []
-    html = '<div class="result"><h3><a href="https://www.python.org/">Python 官网</a></h3><p>官方资料</p></div>'
-
-    def handler(request):
-        requests.append(request)
-        return response("<title>安全验证</title>" if len(requests) == 1 else html)
-
-    result = asyncio.run(client(handler).search(DEFAULT_SEARCH, "Python 官网", lambda: True))
-    assert result["engine"] == "baidu"
-    assert [r.url.host for r in requests] == ["cn.bing.com", "www.baidu.com"]
-    assert requests[0].url.params["q"] == requests[1].url.params["wd"] == "Python 官网"
-    assert "q" not in requests[1].url.params and "wd" not in requests[0].url.params
-
-
-def test_retired_search_addresses_are_rejected_instead_of_migrated():
-    for key in ("baseUrl", "baiduBaseUrl"):
-        with pytest.raises(ValueError, match="字段"):
-            validate_search({**DEFAULT_SEARCH, key: "https://example.com/s"})
-        with pytest.raises(ValueError, match="未知字段"):
-            merge_search(DEFAULT_SEARCH, {key: "https://example.com/s"})
-
-def test_bing_accepts_search_engine_order_without_query_echo_or_topic_constraints():
-    query = "2026 英雄联盟全球总决赛 S16 赛程 瑞士轮"
-    assert search_results("bing", '<input name="q" value="2026">' + HTML, 6)
-    result = asyncio.run(
-        client(lambda _: response(HTML)).search(DEFAULT_SEARCH, query, lambda: True)
+def test_rss_results_are_validated_deduplicated_and_truncated():
+    body = rss(
+        ("First", "https://example.com/one", "one"),
+        ("Second", "https://example.com/two", "two"),
+        ("Dup", "https://example.com/one", "dup"),
+        ("Private", "http://127.0.0.1/secret", "skip"),
+        ("NoLink", "", "skip"),
     )
-    assert result["engine"] == "bing" and httpx.URL(result["searchUrl"]).params["q"] == query
+    assert parse_rss(body, 2) == [
+        {"title": "First", "url": "https://example.com/one", "snippet": "one"},
+        {"title": "Second", "url": "https://example.com/two", "snippet": "two"},
+    ]
 
 
-@pytest.mark.parametrize("provider", ["bing", "bocha", "zhipu"])
-def test_retired_provider_fields_are_rejected_instead_of_loaded(provider):
-    with pytest.raises(ValueError, match="字段"):
-        validate_search({**DEFAULT_SEARCH, "provider": provider, "apiKey": "retired-secret"})
+def test_rss_failures_surface_as_a_single_failed_attempt():
+    for reply, code in (
+        (httpx.Response(503, text="down"), "search_failed"),
+        (httpx.Response(200, content=b"<rss><channel></channel></rss>"), "search_failed"),
+        (httpx.Response(200, content=b"<rss><channel><item>broken"), "search_failed"),
+    ):
+        with pytest.raises(SearchError) as error:
+            asyncio.run(client(lambda _, r=reply: r).search(DEFAULT_SEARCH, "x", lambda: True))
+        assert error.value.code == code
+        assert error.value.attempts == [
+            {"engine": "bing", "mode": "rss", "status": "failed", "reason": error.value.attempts[0]["reason"], "elapsedMs": error.value.attempts[0]["elapsedMs"]}
+        ]
+
+
+def test_search_result_urls_are_not_the_query_echo():
+    result = asyncio.run(
+        client(lambda _: rss_response()).search(DEFAULT_SEARCH, "2026 英雄联盟总决赛", lambda: True)
+    )
+    assert result["engine"] == "bing" and httpx.URL(result["searchUrl"]).params["q"] == "2026 英雄联盟总决赛"
+
+
+def test_retired_search_addresses_and_channels_are_rejected_instead_of_migrated():
+    for key in ("baseUrl", "baiduBaseUrl", "provider", "apiKey", "mode", "fallback", "searchProfileId"):
+        value = "local" if key == "mode" else True if key == "fallback" else "https://example.com/s"
+        with pytest.raises(ValueError, match="字段|未知字段"):
+            validate_search({**DEFAULT_SEARCH, key: value})
+        with pytest.raises(ValueError, match="未知字段"):
+            merge_search(DEFAULT_SEARCH, {key: value})
 
 def test_redirect_rechecks_dns_before_following_the_new_address():
     calls = []
@@ -215,9 +231,13 @@ def test_article_truncation_retains_title_and_source_and_cancelled_read_returns_
 
 def test_disabled_budget_browse_and_cancellation_gates():
     count = []
-    c = client(
-        lambda request: (count.append(request) if request.url.path != "/" else None) or response()
-    )
+
+    def handler(request):
+        if request.url.path != "/":
+            count.append(request)
+        return rss_response() if request.url.path == "/search" else response(HTML)
+
+    c = client(handler)
     off = WebTools(DEFAULT_SEARCH, lambda: True, client=c)
     with pytest.raises(ValueError, match="关闭"):
         asyncio.run(off.execute("web_search", {"query": "x"}))

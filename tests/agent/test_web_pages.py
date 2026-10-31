@@ -3,26 +3,12 @@ import asyncio
 import httpx
 import pytest
 
-from QQBot.agent.web import WebClient, parse_bing, sanitize_query, search_results
+from QQBot.agent.web import WebClient, sanitize_query
 from QQBot.agent.web_pages import read_page
 
 
 def page(html):
     return {"url": "https://example.com/article", "type": "text/html", "text": html}
-
-
-def test_results_do_not_borrow_next_result_snippet_or_script_text():
-    html = """<li class=b_algo><h2><a href="https://example.com/one">Python one</a></h2></li>
-        <li class=b_algo><h2><a href="https://example.com/two">Python two</a></h2><p>second only</p><script>fake</script></li>"""
-    results = search_results("bing", html, 6)
-    assert [r["snippet"] for r in results] == ["", "second only"]
-
-
-def test_omitted_li_end_tags_and_malformed_links_do_not_drop_valid_results():
-    html = """<li class=b_algo><h2><a href="https://[broken/">Broken</a></h2>
-        <li class=b_algo><h2><a href="https://example.com/one">Python one</a></h2><p>one</p>
-        <li class=b_algo><h2><a href="https://example.com/two">Python two</a></h2><p>two</p>"""
-    assert [r["snippet"] for r in parse_bing(html, 6)] == ["one", "two"]
 
 
 def test_article_prefers_main_content_and_excludes_hidden_menus_and_scripts():
@@ -90,44 +76,8 @@ def test_excessive_nesting_is_rejected_before_building_unbounded_article_candida
         read_page(page(html), 12000)
 
 
-@pytest.mark.parametrize(
-    "engine,tag,classes,heading", [("bing", "li", "b_algo", "h2"), ("baidu", "div", "result", "h3")]
-)
-def test_search_ignores_hidden_results_ancestors_and_inline_summary_text(
-    engine, tag, classes, heading
-):
-    def result(path, extra="", summary="Python documentation"):
-        return f'<{tag} class="{classes}" {extra}><{heading}><a href="https://example.com/{path}">Python {path}</a></{heading}><p>{summary}</p></{tag}>'
-
-    html = (
-        "<div hidden>"
-        + result("hidden-parent")
-        + "</div>"
-        + result("hidden-result", 'aria-hidden="true"')
-    )
-    html += result(
-        "visible",
-        summary='Python documentation<span style="display:none">invisible injection</span>',
-    )
-    results = search_results(engine, html, 6)
-    assert [item["url"] for item in results] == ["https://example.com/visible"]
-    assert results[0]["snippet"] == "Python documentation"
-
-
-def test_bare_html_attributes_do_not_crash_page_or_search_parsing():
+def test_bare_html_attributes_do_not_crash_page_parsing():
     assert (
         read_page(page("<article style><p>Readable text</p></article>"), 12000)["content"]
         == "Readable text"
     )
-    html = '<li class><h2>ignored</h2></li><li class=b_algo style><h2><a href="https://example.com/">Python</a></h2></li>'
-    assert search_results("bing", html, 6)[0]["title"] == "Python"
-
-
-def test_search_layout_visibility_does_not_hide_descendant_results_or_drop_a_deferred_layout():
-    html = '<div style="visibility:hidden"><li class=b_algo><h2 style="visibility:visible"><a href="https://example.com/">Python</a></h2><p>Python documentation</p></li></div>'
-    assert search_results("bing", html, 6)[0]["snippet"] == "Python documentation"
-
-
-def test_search_still_excludes_explicitly_invisible_text_inside_each_result():
-    html = '<li class=b_algo><h2><a href="https://example.com/">Python</a></h2><p>Python documentation<span style="visibility:hidden">invisible words</span></p></li>'
-    assert search_results("bing", html, 6)[0]["snippet"] == "Python documentation"

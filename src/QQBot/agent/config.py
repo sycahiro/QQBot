@@ -12,7 +12,6 @@ from .profiles import check_api, manage_profile, public_config, validate_profile
 from .web import (
     DEFAULT_SEARCH,
     merge_search,
-    resolve_search_api,
     validate_search,
 )
 
@@ -125,7 +124,6 @@ def validate(config):
     validate_profiles(config, validate_api)
     validate_media(config)
     validate_search(config["webSearch"])
-    resolve_search_api(config)
     if (
         not isinstance(config["sticker"], dict)
         or set(config["sticker"]) != set(DEFAULTS["sticker"])
@@ -234,7 +232,6 @@ class SettingsStore:
     def check_search(self, account, draft):
         config = self.read(account)
         config["webSearch"] = merge_search(config["webSearch"], draft)
-        resolve_search_api(config)
         return config["webSearch"]
 
 

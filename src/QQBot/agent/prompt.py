@@ -57,7 +57,7 @@ def prompt(config, account, key, context, trigger_ids, memory=""):
         system += "\n\n【发图】send_image 只发送当前聊天的 HTTPS 图片直链。先 preview=true 查看实际图片，收到媒体理解结果确认合适后，在下一次调用中发送。"
         system += "不要编造图片地址；没有可靠直链就说明无法发图。每次最多预览和发送各 3 张，动图只发送第一帧。不要把预览说成已发送。"
     if config["webSearch"]["enabled"]:
-        system += "\n\n【本地联网规则】只能通过本机 web_search 和 web_fetch 工具联网，不使用服务商或模型后台的搜索。只有工具实际返回的内容才能作为搜索结果；没有成功结果时必须如实说明，不得声称已经联网或编造来源。"
+        system += "\n\n【本地联网规则】只能通过本机 web_search 和 web_fetch 工具联网。只有工具实际返回的内容才能作为搜索结果；搜索失败或没有结果时必须如实说明没搜到，不得声称已经联网或编造来源。"
         system += "\n\n【联网】可用 web_search 查询网络资料；涉及近期事实时先搜索，不要编造来源。回复只说结论，默认不附来源名称或链接；对方明确询问来源或需要链接时再提供。"
         if config["webSearch"]["browse"]:
             system += "需要正文时调用 web_fetch。"

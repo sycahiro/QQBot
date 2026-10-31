@@ -1945,6 +1945,8 @@ p.action-notice {
     position: relative;
     width: 100%;
     min-width: 0;
+    /* 外壳定高 38px（border-box，含边框），与全局 input 完全一致。 */
+    height: 38px;
     color: var(--foreground);
     background: var(--card);
     border: 1px solid var(--border);
@@ -1959,8 +1961,7 @@ p.action-notice {
     display: flex;
     align-items: center;
     width: 100%;
-    /* 恰好 38px，与全局 input 的 min-height 一致，避免下拉框比文本框高。 */
-    height: 38px;
+    height: 100%;
     padding: 0 38px 0 12px;
     text-align: left;
     font: inherit;
@@ -1977,7 +1978,7 @@ p.action-notice {
     border: 0;
     background: transparent;
     border-radius: 8px;
-    height: 38px;
+    height: 100%;
     padding: 0 38px 0 12px;
     outline: none;
 }

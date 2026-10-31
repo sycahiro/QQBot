@@ -108,18 +108,6 @@ export function NetworkSettings({ ready }: { ready: boolean }) {
                         />
                         允许读取网页正文
                     </label>
-                    <div className="bot-field">
-                        <span>搜索结果条数</span>
-                        <Select
-                            label="搜索结果条数"
-                            value={String(config.maxResults)}
-                            onChange={(value) => change({ maxResults: Number(value) })}
-                            options={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({
-                                value: String(n),
-                                label: `${n} 条`,
-                            }))}
-                        />
-                    </div>
                 </div>
                 <div className="card-save-footer save-actions">
                     <button

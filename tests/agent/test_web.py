@@ -268,8 +268,9 @@ def test_search_settings_are_keyless_and_draft_checks_do_not_save(tmp_path):
         for patch in ({"provider": "bocha"}, {"apiKey": "unused"}):
             with pytest.raises(ValueError):
                 s.save(ACCOUNT, {"webSearch": patch})
-        s.check_search(ACCOUNT, {"maxResults": 2})
-        assert s.read(ACCOUNT)["webSearch"]["maxResults"] == 6
+        # check_search 只校验草稿不落盘：已存的 browse 保持默认 True。
+        s.check_search(ACCOUNT, {"browse": False})
+        assert s.read(ACCOUNT)["webSearch"]["browse"] is True
     finally:
         db.close()
 

@@ -31,12 +31,12 @@ def test_probe_uses_actual_query_and_returns_results_without_enabling_or_saving(
 
     b._web.search = search
     result = b.test_web_search(
-        None, {"maxResults": 3}, {"kind": "search", "value": "想查的实际关键词"}
+        None, {"enabled": True}, {"kind": "search", "value": "想查的实际关键词"}
     )
     assert (
         result["ok"] and result["success"] and result["result"]["results"][0]["title"] == "真实结果"
     )
-    assert calls[0][1] == "想查的实际关键词" and calls[0][0]["maxResults"] == 3
+    assert calls[0][1] == "想查的实际关键词" and calls[0][0]["enabled"] is True
     assert settings.values() == before and not (path / "settings" / "global.json").exists()
 
 
@@ -68,7 +68,7 @@ def test_fetch_probe_uses_same_reader_and_discards_changed_config(bridge):
     assert r["ok"] and r["success"] and r["result"]["content"] == "内容"
 
     async def changed(url, permit):
-        settings.save("global", {"webSearch": {"maxResults": 3}})
+        settings.save("global", {"webSearch": {"browse": False}})
         return {"content": "应丢弃的内容"}
 
     b._web.fetch = changed
@@ -115,7 +115,7 @@ def test_probe_uses_the_rss_search_channel_from_the_unsaved_draft(bridge):
     calls = []
 
     async def search(config, query, permit):
-        assert permit() and config["maxResults"] == 4 and "searchProfileId" not in config
+        assert permit() and config["browse"] is True and "searchProfileId" not in config
         calls.append(query)
         return {
             "engine": "bing",
@@ -127,7 +127,7 @@ def test_probe_uses_the_rss_search_channel_from_the_unsaved_draft(bridge):
     b._web.search = search
     r = b.test_web_search(
         None,
-        {"maxResults": 4},
+        {"browse": True},
         {"kind": "search", "value": "查询词"},
     )
     assert (

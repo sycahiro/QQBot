@@ -36,11 +36,7 @@ const config = () => ({
     activeProfileId: '',
     webSearch: {
         enabled: false,
-        maxResults: 6,
         browse: true,
-        mode: 'local',
-        fallback: true,
-        searchProfileId: '',
     },
     sticker: { enabled: false, collectEnabled: false, allowPoke: false },
 });

@@ -43,7 +43,6 @@ export interface BotConfig {
     };
     webSearch: {
         enabled: boolean;
-        maxResults: number;
         browse: boolean;
     };
     sticker: { enabled: boolean; collectEnabled: boolean; allowPoke: boolean };

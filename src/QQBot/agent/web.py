@@ -22,9 +22,10 @@ SEARCH_USER_AGENT = (
 # RSS 是 Bing 官方的订阅输出通道，天然接受程序化访问，不触发网页版的反爬。
 DEFAULT_SEARCH = {
     "enabled": False,
-    "maxResults": 6,
     "browse": True,
 }
+# 单次搜索交给模型的结果条数；RSS 仍请求 10 条，留出校验丢弃的余量。
+SEARCH_RESULT_LIMIT = 6
 MAX_BODY, MAX_TEXT = 2 * 1024 * 1024, 12000
 LOCAL_SEARCH_TIMEOUT, SEARCH_STAGE_TIMEOUT, FETCH_TIMEOUT, MAX_REDIRECTS = 20, 12, 25, 3
 
@@ -70,8 +71,6 @@ def validate_search(value):
         raise ValueError("联网搜索设置字段不完整")
     if type(value["enabled"]) is not bool or type(value["browse"]) is not bool:
         raise ValueError("联网开关必须为布尔值")
-    if type(value["maxResults"]) is not int or not 1 <= value["maxResults"] <= 10:
-        raise ValueError("搜索结果条数应为 1 到 10")
     return value
 
 
@@ -330,7 +329,7 @@ class WebClient:
                     body = response.content.decode(encoding, errors="replace")
                 except LookupError:
                     body = response.content.decode("utf-8", errors="replace")
-                results = parse_rss(body, config["maxResults"])
+                results = parse_rss(body, SEARCH_RESULT_LIMIT)
             if not permit():
                 raise asyncio.CancelledError()
             attempt.update(status="ok", count=len(results))

@@ -17,7 +17,7 @@ QQBot 是一个运行在 Windows 上的个人 QQ 桌面助手。它通过独立�
 - **联网搜索（可选）**：通过 Bing 官方 RSS 通道搜索公开网页并读取正文核实，无需搜索 API 密钥、不依赖浏览器；自动把口语问题提炼成关键词查询，搜索失败或结果无关时如实说明。
 - **其他**：拍一拍互动、撤回自己刚发出的错误消息、合并转发展开。
 
-当前版本面向 Windows 桌面版个人 QQ。本项目派生自 K0nd1us/QQ-agent（下称"上游"）：上游作者已于 2026 年 10 月下旬删除其 GitHub 仓库（<https://github.com/K0nd1us/QQ-agent> 现已 404，作者账号下的公开仓库已全部清空，最后可查的公开活跃记录为 2026 年 10 月 19 日），随上游一同提供的插件市场页面 <https://www.kondius.cn/qq-agent/plugin-market/> 也已无法访问（2026 年 10 月 30 日验证返回 503）。由于插件市场已随上游一起停止服务，本版本移除了插件市场浏览功能："扩展"页面仅作占位展示，目前没有可安装的扩展。
+当前版本面向 Windows 桌面版个人 QQ。本项目的功能设计参考了 K0nd1us/QQ-agent（下称"上游"）：上游项目已于 2026 年 10 月下旬停止服务——作者删除了其 GitHub 仓库（<https://github.com/K0nd1us/QQ-agent> 现已 404，作者账号下的公开仓库已全部清空，最后可查的公开活跃记录为 2026 年 10 月 19 日），随上游一同提供的插件市场页面 <https://www.kondius.cn/qq-agent/plugin-market/> 也已无法访问（2026 年 10 月 30 日验证返回 503）。由于插件市场已随上游一起停止服务，本版本移除了插件市场浏览功能："扩展"页面仅作占位展示，目前没有可安装的扩展。
 
 **音频和视频功能当前暂未加入**。如有需要，欢迎 Fork 本仓库自行修改实现，也欢迎通过 Pull Request 提交改进。
 
@@ -208,14 +208,18 @@ cd src\DesktopShell
 
 ### 参考的第三方项目
 
-#### QQ-agent（上游项目）
+#### QQ-agent
 
-本项目的机器人业务设计和部分实现参考或改写自 [K0nd1us/QQ-agent](https://github.com/K0nd1us/QQ-agent)。该上游项目已于 2026 年 10 月下旬停止服务：作者删除了其 GitHub 仓库（链接现已 404），随上游一同提供的插件市场页面也已无法访问；上列地址仅作来源标注。原项目使用 MIT License，原版权及许可声明如下：
+[K0nd1us/QQ-agent](https://github.com/K0nd1us/QQ-agent)：本项目在功能设计上参考过其源码与产品形态（人设、记忆、表情库、存档、插件市场等功能的思路），代码全部为本项目以不同语言（Python / React）重新实现，未使用、未复制、未翻译其任何代码或文本。该上游项目已于 2026 年 10 月下旬停止服务：作者删除了其 GitHub 仓库（链接现已 404），随上游一同提供的插件市场页面也已无法访问；上列地址仅作来源标注。
+
+#### qq-bridge（内置人设卡的来源）
+
+[Derpyu520/qq-bridge](https://github.com/Derpyu520/qq-bridge)：QQ 消息接入 DSH agent 的桥接项目。本项目内置的默认人设（"小鲸鱼"角色卡）改编自该仓库的 `roles/小鲸鱼.md`，并已适配本项目的工具架构。该角色卡按 MIT License 授权，原版权及许可声明如下：
 
 ```text
 MIT License
 
-Copyright (c) 2026 Kondius
+Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -235,10 +239,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-#### qq-bridge
-
-[Derpyu520/qq-bridge](https://github.com/Derpyu520/qq-bridge)：QQ 消息接入 DSH agent 的桥接项目。本项目参考了其消息桥接与 QQ 安全边界的设计；其代码未包含在本仓库中。该项目使用 MIT License（Copyright (c) 2026 Derpyu520 and qq-bridge / QSH contributors）。
 
 #### AstrBot
 

@@ -97,8 +97,7 @@ export function About({ info }: { info: DesktopInfo | null }) {
                     <span className="about-version">{info ? `v${info.version}` : '读取版本…'}</span>
                 </div>
                 <p className="about-intro">
-                    QQBot 是运行在 Windows 上的个人 QQ 助手。连接本机已登录的 QQ
-                    后，可以管理自动回复、聊天存档、记忆与表情库。
+                    QQBot 是运行在 Windows 上的个人 QQ 助手。连接本机已登录的 QQ 后，由你配置的大模型按人设自动回复，管理聊天存档、记忆与表情库；联网搜索、图片理解和发图等能力可在设置中按需开启。
                 </p>
                 <p className="about-intro">
                     设置与记录保存在本机；使用模型、联网搜索或图片理解时，相关内容会发送到对应的模型服务或搜索引擎。
@@ -214,6 +213,7 @@ export function About({ info }: { info: DesktopInfo | null }) {
                 </div>
                 <p className="about-component-note">
                     组件随安装与升级变化；许可证名称仅作索引，完整版权声明和条款以各组件附带的文件为准。
+                    运行时主要组件的用途与许可对照，见项目 README 的「许可与第三方声明」一节。
                 </p>
                 {failed ? (
                     <p className="about-empty" role="status">

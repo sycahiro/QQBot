@@ -208,9 +208,35 @@ cd src\DesktopShell
 
 ### 参考的第三方项目
 
+以下项目按各自的开源许可列明，MIT 许可文本全文随附。
+
 #### QQ-agent
 
-[K0nd1us/QQ-agent](https://github.com/K0nd1us/QQ-agent)：本项目在功能设计上参考过其源码与产品形态（人设、记忆、表情库、存档、插件市场等功能的思路），代码全部为本项目以不同语言（Python / React）重新实现，未使用、未复制、未翻译其任何代码或文本。该上游项目已于 2026 年 10 月下旬停止服务：作者删除了其 GitHub 仓库（链接现已 404），随上游一同提供的插件市场页面也已无法访问；上列地址仅作来源标注。
+[K0nd1us/QQ-agent](https://github.com/K0nd1us/QQ-agent)：本项目在功能设计上参考过其源码与产品形态（人设、记忆、表情库、存档、插件市场等功能的思路），代码全部为本项目以不同语言（Python / React）重新实现，未使用、未复制、未翻译其任何代码或文本。该上游项目已于 2026 年 10 月下旬停止服务：作者删除了其 GitHub 仓库（链接现已 404），随上游一同提供的插件市场页面也已无法访问；上列地址仅作来源标注。原项目按 MIT License 授权：
+
+```text
+MIT License
+
+Copyright (c) 2026 Kondius
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 #### qq-bridge（内置人设卡的来源）
 

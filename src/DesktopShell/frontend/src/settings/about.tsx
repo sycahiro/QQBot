@@ -267,9 +267,6 @@ export function About({ info }: { info: DesktopInfo | null }) {
                 <div className="about-runtime-card">
                     <div>
                         <strong>SnowLuma</strong>
-                        <span>
-                            {info?.snowlumaVersion ? `v${info.snowlumaVersion}` : '版本未知'}
-                        </span>
                     </div>
                     <p>
                         由 SnowLuma 项目团队开发，QQBot

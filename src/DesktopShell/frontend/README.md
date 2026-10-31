@@ -9,4 +9,4 @@ React 和 TypeScript 实现桌面界面，通过 pywebview 桥调用 Python 后�
 - `src/styles/`：主题、桌面布局与组件样式。
 - `tests/`：前端行为测试。
 
-修改源码后重新启动应用。安装和检查命令见[项目首页](../../../README.md)。界面代码为本项目编写；React、motion 和图标组件适用各自的许可，详见[第三方声明](../../../THIRD_PARTY_NOTICES.md)。
+修改源码后重新启动应用。安装和检查命令见[项目首页](../../../README.md)。界面代码为本项目编写；React、motion 和图标组件适用各自的许可，详见项目 README 的[许可与第三方声明](../../../README.md#许可与第三方声明)一节。

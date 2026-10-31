@@ -293,8 +293,8 @@ export function About({ info }: { info: DesktopInfo | null }) {
                     <HeartHandshake size={18} />
                 </div>
                 <p className="about-intro">
-                    机器人业务设计和部分实现参考或改写自 QQ Agent，原项目版权及许可声明见项目内
-                    THIRD_PARTY_NOTICES.md。感谢 SnowLuma
+                    机器人业务设计和部分实现参考或改写自 QQ Agent，原项目版权及许可声明见项目 README 的
+                    「许可与第三方声明」一节。感谢 SnowLuma
                     和其他第三方组件的维护者；各项目的名称、代码和许可归其各自所有者。
                 </p>
             </section>

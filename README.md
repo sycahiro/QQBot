@@ -246,7 +246,7 @@ SOFTWARE.
 
 ### SnowLuma
 
-[SnowLuma](https://github.com/SnowLuma/SnowLuma) 是独立的第三方运行时，不包含在本仓库中。安装脚本从官方发行页获取其 Windows 发行包；其源代码、二进制与原生组件适用 SnowLuma 自己的许可、最终用户许可协议和隐私说明，并非由本项目的 MIT License 授权。具体条款以下载的发行包和官方项目为准。
+[SnowLuma](https://github.com/SnowLuma/SnowLuma) 是独立的第三方运行时，**不包含在本仓库中，安装脚本也不会替你下载**：需要按上方"安装教程"手动从官方发行页获取其 Windows 发行包并放入 `src/SnowLuma/`。其源代码、二进制与原生组件适用 SnowLuma 自己的许可、最终用户许可协议和隐私说明，并非由本项目的 MIT License 授权。具体条款以下载的发行包和官方项目为准。
 
 ### 其他组件
 

@@ -2262,6 +2262,11 @@ p.action-notice {
 .memory-member h3 {
     font-size: 14px;
 }
+.memory-create-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
 .memory-save {
     margin-top: 14px;
 }

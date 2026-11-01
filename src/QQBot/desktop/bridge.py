@@ -304,6 +304,21 @@ class DesktopBridge:
 
         return self._business(read)
 
+    def get_group_members(self, group_id, account):
+        def read():
+            if not isinstance(account, str):
+                raise ValueError("请先连接机器人账号")
+            selected = self._account(account)
+            if not self._connection:
+                raise EngineError("NOT_READY", "QQ 联系人服务尚未就绪")
+            # 与 get_contacts 相同：原生动作共用 agent 的锁排队，避免并发 BUSY。
+            with self._agent.native_lock if self._agent else self._native_fallback_lock:
+                items = contacts.group_members(self._connection, selected, group_id)
+            self._account(selected)
+            return {"account": selected, "group": group_id, "items": items}
+
+        return self._business(read)
+
     def process_archive(self, key, account):
         def run():
             if not isinstance(account, str):

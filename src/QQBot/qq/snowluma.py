@@ -43,6 +43,7 @@ ONEBOT_ACTIONS = frozenset({
     "get_forward_msg",
     "get_group_list",
     "get_friend_list",
+    "get_group_member_list",
     "send_private_msg",
     "send_group_msg",
     "delete_msg",

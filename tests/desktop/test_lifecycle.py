@@ -61,6 +61,7 @@ def test_atomic_state_and_live_desktop_information(tmp_path):
         "import_sticker",
         "expand_forward",
         "get_contacts",
+        "get_group_members",
         "process_archive",
         "stop_session",
         "rerun_session",

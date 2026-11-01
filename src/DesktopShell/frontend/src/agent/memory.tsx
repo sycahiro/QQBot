@@ -8,10 +8,15 @@ import {
 import { useConfirm } from '../components/confirmation';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatedList } from '../components/animated-list';
-import { Brain, Save, Trash2 } from 'lucide-react';
+import { Brain, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { chatLabel, type MemoryChat, type MemoryMember } from '../business';
 import { MemoryReview } from './memory-review';
 import { Notice } from '../components/notice';
+
+interface RosterMember {
+    id: string;
+    name: string;
+}
 
 export function Memory({ ready }: { ready: boolean }) {
     const confirm = useConfirm();
@@ -26,6 +31,12 @@ export function Memory({ ready }: { ready: boolean }) {
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
     const [revision, refresh] = useState(0);
+    const [creating, setCreating] = useState(false);
+    const [picked, pickMember] = useState<RosterMember | null>(null);
+    const [createDraft, setCreateDraft] = useState('');
+    const [roster, setRoster] = useState<RosterMember[] | null>(null);
+    const [rosterQuery, setRosterQuery] = useState('');
+    const [rosterBusy, setRosterBusy] = useState(false);
     const selected = chats.some((c) => c.chatKey === chosen) ? chosen : chats[0]?.chatKey;
     const current = chats.find((c) => c.chatKey === selected);
     const marker = useRef('');
@@ -71,6 +82,11 @@ export function Memory({ ready }: { ready: boolean }) {
     useEffect(() => {
         setDrafts({});
         dirty.current = false;
+        setCreating(false);
+        pickMember(null);
+        setCreateDraft('');
+        setRoster(null);
+        setRosterQuery('');
     }, [account, selected]);
     useEffect(() => {
         if (!ready || !selected || !account) return;
@@ -104,8 +120,8 @@ export function Memory({ ready }: { ready: boolean }) {
             clearTimeout(timer);
         };
     }, [ready, selected, account, revision]);
-    const save = async (member: MemoryMember) => {
-        if (!account || !selected || working.current || detailKey !== marker.current) return;
+    const save = async (member: MemoryMember, textOverride?: string) => {
+        if (!account || !selected || working.current || detailKey !== marker.current) return false;
         const expected = marker.current;
         const current = () => mounted.current && marker.current === expected;
         working.current = true;
@@ -113,7 +129,10 @@ export function Memory({ ready }: { ready: boolean }) {
         setError('');
         setNotice('');
         try {
-            const text = drafts[member.userId] ?? member.entries.map((e) => e.content).join('\n');
+            const text =
+                textOverride ??
+                drafts[member.userId] ??
+                member.entries.map((e) => e.content).join('\n');
             const result = await window.pywebview!.api.save_memory(
                 selected,
                 member.userId,
@@ -121,10 +140,10 @@ export function Memory({ ready }: { ready: boolean }) {
                 text.split('\n').filter((v) => v.trim()),
                 account,
             );
-            if (!current()) return;
+            if (!current()) return false;
             if (result.ok && result.account === account) {
                 const latest = await window.pywebview!.api.get_memories(selected);
-                if (!current()) return;
+                if (!current()) return false;
                 if (latest.ok && latest.account === account) setMembers(latest.members);
                 setNotice('成员记忆已保存；如需继续处理新消息，请重新开启自动回复。');
                 setDrafts((values) => {
@@ -133,9 +152,13 @@ export function Memory({ ready }: { ready: boolean }) {
                     return next;
                 });
                 refresh((v) => v + 1);
-            } else setError(result.ok ? '连接账号已变化，请重新打开记忆' : result.error.message);
+                return true;
+            }
+            setError(result.ok ? '连接账号已变化，请重新打开记忆' : result.error.message);
+            return false;
         } catch {
             if (current()) setError('保存结果未确认，请刷新检查');
+            return false;
         } finally {
             working.current = false;
             if (mounted.current) setBusy(false);
@@ -186,10 +209,81 @@ export function Memory({ ready }: { ready: boolean }) {
     };
     const visible = detailKey === markerValue ? members : [];
     const group = selected?.startsWith('group:');
+    const peerId = selected?.startsWith('private:') ? selected.split(':')[1] : '';
+    useEffect(() => {
+        if (!creating || !group || !selected || !account || roster || rosterBusy) return;
+        let active = true;
+        setRosterBusy(true);
+        window
+            .pywebview!.api.get_group_members(selected.split(':')[1], account)
+            .then((result) => {
+                if (!active) return;
+                if (result.ok && result.account === account) setRoster(result.items);
+                else setError(result.ok ? '连接账号已变化，请重新打开记忆' : result.error.message);
+            })
+            .catch(() => {
+                if (active) setError('群成员列表读取失败，请点击刷新重试');
+            })
+            .finally(() => {
+                if (active) setRosterBusy(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, [creating, group, selected, account, roster, rosterBusy]);
+    const prefilled = (userId: string) =>
+        members
+            .find((m) => m.userId === userId)
+            ?.entries.map((e) => e.content)
+            .join('\n') ?? '';
+    const startCreate = () => {
+        setError('');
+        setCreating(true);
+        if (group) {
+            pickMember(null);
+            setCreateDraft('');
+        } else {
+            pickMember({ id: peerId, name: current?.name || peerId });
+            setCreateDraft(prefilled(peerId));
+        }
+    };
+    const choosePicked = (member: RosterMember) => {
+        pickMember(member);
+        setCreateDraft(prefilled(member.id));
+    };
+    const cancelCreate = () => {
+        setCreating(false);
+        pickMember(null);
+        setCreateDraft('');
+        dirty.current = false;
+    };
+    const saveCreate = async () => {
+        if (!picked || !account || !selected) return;
+        const lines = createDraft.split('\n').filter((v) => v.trim());
+        if (!lines.length) {
+            setError('请至少填写一条记忆内容，每行一条');
+            return;
+        }
+        if (detailKey !== marker.current) {
+            setError('成员列表尚未加载完成，请稍候再试');
+            return;
+        }
+        const existing = members.find((m) => m.userId === picked.id);
+        const ok = await save(
+            { userId: picked.id, target: picked.name, entries: existing?.entries ?? [] },
+            createDraft,
+        );
+        if (ok) {
+            setCreating(false);
+            pickMember(null);
+            setCreateDraft('');
+            dirty.current = false;
+        }
+    };
     return (
         <div className="desktop-sections">
             <RecordToolbar
-                summary="查看和编辑成员的长期记忆，每行一条。"
+                summary="查看、新建和编辑成员的长期记忆，每行一条。"
                 noun="记忆"
                 removeLabel="删除当前聊天记忆"
                 remove={{ disabled: busy || !current?.count, run: () => void remove(false) }}
@@ -207,7 +301,7 @@ export function Memory({ ready }: { ready: boolean }) {
             <Notice title="记忆操作" message={notice} onClose={() => setNotice('')} />
             {!chats.length ? (
                 <RecordEmpty icon={<Brain size={28} />} title="还没有成员记忆">
-                    <p>模型记录的长期印象会显示在这里。</p>
+                    <p>模型记录的长期印象会显示在这里；选择一个聊天后可以手动新建。</p>
                 </RecordEmpty>
             ) : (
                 <RecordBrowser
@@ -237,6 +331,134 @@ export function Memory({ ready }: { ready: boolean }) {
                         subtitle={current ? chatLabel(current).number : ''}
                         icon={<Brain size={18} />}
                     />
+                    <div className="memory-create-bar">
+                        <button className="btn" disabled={busy || !selected} onClick={startCreate}>
+                            <UserPlus size={15} />
+                            {creating ? '填写记忆内容' : '新建记忆'}
+                        </button>
+                    </div>
+                    {creating && (
+                        <section className="ui-card memory-member">
+                            <div className="console-panel-heading">
+                                <div>
+                                    <h3>
+                                        {picked
+                                            ? picked.name || '聊天成员'
+                                            : group
+                                              ? '选择群成员'
+                                              : '新建私聊记忆'}
+                                    </h3>
+                                    <p>
+                                        {picked
+                                            ? `QQ 号：${picked.id}`
+                                            : group
+                                              ? '从下方群成员列表中选择一位'
+                                              : `记录对象：${peerId}`}
+                                    </p>
+                                </div>
+                                <button className="btn" disabled={busy} onClick={cancelCreate}>
+                                    <X size={15} />
+                                    取消
+                                </button>
+                            </div>
+                            {group && !picked && (
+                                <div className="form-wide">
+                                    <div className="contact-picker-toolbar">
+                                        <input
+                                            aria-label="搜索群成员"
+                                            placeholder="搜索群名片、昵称或号码"
+                                            value={rosterQuery}
+                                            onChange={(e) => setRosterQuery(e.target.value)}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="btn"
+                                            disabled={rosterBusy}
+                                            onClick={() => {
+                                                setRoster(null);
+                                                setRosterQuery('');
+                                            }}
+                                        >
+                                            <RefreshCw
+                                                size={15}
+                                                className={rosterBusy ? 'qq-scanning' : undefined}
+                                            />
+                                            {roster ? '刷新成员' : '重新读取'}
+                                        </button>
+                                    </div>
+                                    {roster && (
+                                        <div className="contact-picker-list">
+                                            {roster
+                                                .filter((m) =>
+                                                    `${m.name} ${m.id}`
+                                                        .toLowerCase()
+                                                        .includes(rosterQuery.trim().toLowerCase()),
+                                                )
+                                                .slice(0, 200)
+                                                .map((m) => (
+                                                    <button
+                                                        type="button"
+                                                        className="contact-picker-item"
+                                                        key={m.id}
+                                                        disabled={busy}
+                                                        onClick={() => choosePicked(m)}
+                                                    >
+                                                        <span>
+                                                            <strong>{m.name}</strong>
+                                                            <small>{m.id}</small>
+                                                        </span>
+                                                    </button>
+                                                ))}
+                                            {!roster.some((m) =>
+                                                `${m.name} ${m.id}`
+                                                    .toLowerCase()
+                                                    .includes(rosterQuery.trim().toLowerCase()),
+                                            ) && <p className="action-notice">没有匹配成员</p>}
+                                            {roster.length > 200 && (
+                                                <small>
+                                                    共 {roster.length} 位成员，请用搜索缩小范围。
+                                                </small>
+                                            )}
+                                        </div>
+                                    )}
+                                    {rosterBusy && <p className="action-notice">正在读取群成员…</p>}
+                                </div>
+                            )}
+                            {picked && (
+                                <>
+                                    {members.some((m) => m.userId === picked.id) && (
+                                        <p className="action-notice">
+                                            该成员已有记忆，保存将整体替换原有内容。
+                                        </p>
+                                    )}
+                                    <div className="bot-form-grid">
+                                        <label className="form-wide">
+                                            长期印象（每行一条，单条最多 120 字）
+                                            <textarea
+                                                rows={4}
+                                                disabled={busy}
+                                                value={createDraft}
+                                                onChange={(e) => {
+                                                    dirty.current = true;
+                                                    setCreateDraft(e.target.value);
+                                                }}
+                                            />
+                                        </label>
+                                    </div>
+                                    <div className="memory-save">
+                                        <button
+                                            className="btn btn-primary"
+                                            disabled={busy}
+                                            onClick={() => void saveCreate()}
+                                        >
+                                            <Save size={15} />
+                                            保存记忆
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </section>
+                    )}
                     {!visible.length ? (
                         <div className="desktop-empty">
                             <h3>{detailKey !== markerValue ? '正在读取记忆…' : '暂无长期印象'}</h3>

@@ -138,6 +138,10 @@ declare global {
                 get_contacts(
                     account: string,
                 ): Promise<ApiResult<{ account: string; groups: Contact[]; private: Contact[] }>>;
+                get_group_members(
+                    groupId: string,
+                    account: string,
+                ): Promise<ApiResult<{ account: string; group: string; items: Contact[] }>>;
                 process_archive(
                     key: string,
                     account: string,

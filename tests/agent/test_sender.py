@@ -36,6 +36,15 @@ def sender(tmp_path):
     database.close()
 
 
+def test_oversized_merged_tail_reports_clear_error_before_any_dispatch(sender):
+    """拆分超过 4 条且合并回最后一条后仍超 3000 字 → 明确报错，不发出任何消息。"""
+    send, connection, _, session = sender
+    text = "\n\n".join(["a", "b", "c"] + ["长" * 1001] * 3)  # 6 段，合并条 3003 字
+    with pytest.raises(ValueError, match="精简内容"):
+        send.send(ACCOUNT, KEY, {"messages": text}, 0, session, lambda _: None)
+    assert not connection.calls and not session["sent"]
+
+
 @pytest.mark.parametrize(
     "value,expected",
     [
@@ -61,6 +70,13 @@ def sender(tmp_path):
             "doro Dorori Dorore？又复读上了是吧\n[\"笑死 复读机是吧\", \"图你自己收好就行\"]",
             ["doro Dorori Dorore？又复读上了是吧", "笑死 复读机是吧", "图你自己收好就行"],
         ),
+        # 同一次泄漏事故的列表形态：数组行塞在单个元素里也按意图展开，
+        # 不能原样把方括号发进 QQ。
+        (
+            ['正文\n["第二句", "第三句"]'],
+            ["正文", "第二句", "第三句"],
+        ),
+        (["第一条", "第二条\n\n第三条"], ["第一条", "第二条", "第三条"]),
         ('["单条回复"]', ["单条回复"]),
         ('  ["第一条", "第二条"]  ', ["第一条", "第二条"]),
         (

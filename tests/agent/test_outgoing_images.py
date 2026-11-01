@@ -11,6 +11,7 @@ from PIL import Image
 from test_agent import ACCOUNT, OTHER, PEER, packet, result, wait
 from test_images import raster, resolve
 
+from QQBot.agent import outgoing_images as outgoing_images_module
 from QQBot.agent.images import ImageDownloader
 from QQBot.agent.outgoing_images import OutgoingImages, public_image_url
 from QQBot.qq.engine import EngineError
@@ -122,7 +123,7 @@ def test_preview_then_next_model_response_sends_the_exact_same_bytes_only_once()
     asyncio.run(run())
 
 
-def test_preview_budget_includes_failures_and_send_budget_is_bounded():
+def test_preview_budget_includes_failures_and_send_quota_delegates_to_service():
     class Failed:
         async def fetch(self, *args):
             raise ValueError("下载失败")
@@ -142,10 +143,60 @@ def test_preview_budget_includes_failures_and_send_budget_is_bounded():
         outgoing.confirm_previews()
         for _ in range(3):
             await outgoing.execute({"url": URL})
-        with pytest.raises(ValueError, match="最多发送"):
-            await outgoing.execute({"url": URL})
+        # 发送配额以 service._send 对 session["sent"] 的统计为唯一口径（与表情
+        # 共享），本层不再另记计数，重复调用交由上层判定。
+        fourth, _ = await outgoing.execute({"url": URL})
+        assert fourth["sent"] == 1
 
     asyncio.run(run())
+
+
+def test_combined_image_send_quota_counts_session_receipts(stack, monkeypatch):
+    service, receiver, sessions, settings, _, connection, model = stack
+    urls = [f"https://images.example.test/photo-{index}.png" for index in range(4)]
+    calls = []
+
+    async def fetch(self, url, permit):
+        calls.append(url)
+        # 四张图字节必须不同，否则发送去重会按内容哈希把后续发送判为重复。
+        return raster(size=(30, 20 + len(calls)))
+
+    monkeypatch.setattr(ImageDownloader, "fetch", fetch)
+    enable_images(settings)
+    # 预览配额（3）先于发送配额触发会挡住第 4 张的 preview；放开预览上限，
+    # 让发送配额成为本次要验证的约束。
+    monkeypatch.setattr(outgoing_images_module, "MAX_PREVIEWS", 10)
+
+    def batch(*specs):
+        response = None
+        for name, url in specs:
+            preview = name.startswith("p")
+            item = call({"url": url, **({"preview": True} if preview else {})}, name)
+            if response is None:
+                response = item
+            else:
+                response["message"]["tool_calls"] += item["message"]["tool_calls"]
+        return response
+
+    model.responses = [
+        batch(("p0", urls[0])),
+        batch(("s0", urls[0]), ("p1", urls[1])),
+        batch(("s1", urls[1]), ("p2", urls[2])),
+        batch(("s2", urls[2]), ("p3", urls[3])),
+        batch(("s3", urls[3])),
+        result("finish"),
+    ]
+    service.enable(ACCOUNT, True)
+    receiver.receive(ACCOUNT, packet())
+    wait(lambda: sessions.list(ACCOUNT) and sessions.list(ACCOUNT)[0]["status"] == "done")
+    assert len(connection.calls) == 3
+    detail = sessions.get(ACCOUNT, sessions.list(ACCOUNT)[0]["id"])
+    exceeded = [
+        r
+        for r in detail["records"]
+        if r.get("name") == "send_image" and "最多发送" in r.get("result", {}).get("error", "")
+    ]
+    assert len(exceeded) == 1
 
 
 @pytest.mark.parametrize(
@@ -440,5 +491,31 @@ def test_settings_missing_api_fields_are_rejected(tmp_path):
             settings.read(ACCOUNT)
         with pytest.raises(ValueError):
             settings.save(ACCOUNT, {"api": {"sendImages": "yes"}})
+    finally:
+        database.close()
+
+
+def test_settings_missing_nested_fields_are_backfilled_for_old_archives(tmp_path):
+    """升级新增的嵌套字段对旧账号存档补默认值；api 顶层仍严格（见上一测试）。"""
+    from QQBot.agent.config import DEFAULTS, SettingsStore
+    from QQBot.storage.database import Database
+
+    database = Database(tmp_path / "old-nested.sqlite3")
+    try:
+        old = copy.deepcopy(DEFAULTS)
+        old["webSearch"].pop("browse")
+        old["sticker"].pop("collectEnabled")
+        old["mediaOptions"].pop("imageProfileId")
+        old["persona"].pop("customRules")
+        old["defaultPersona"].pop("customRules")
+        database.connection.execute("INSERT INTO settings VALUES(?,?)", (ACCOUNT, json.dumps(old)))
+        database.connection.commit()
+        settings = SettingsStore(database)
+        config = settings.read(ACCOUNT)
+        assert config["webSearch"] == DEFAULTS["webSearch"]
+        assert config["sticker"] == DEFAULTS["sticker"]
+        assert config["mediaOptions"] == DEFAULTS["mediaOptions"]
+        assert config["persona"] == DEFAULTS["persona"]
+        assert config["defaultPersona"] == DEFAULTS["defaultPersona"]
     finally:
         database.close()

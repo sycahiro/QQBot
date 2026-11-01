@@ -254,6 +254,26 @@ def test_forward_expansion_bounds_nodes_text_nested_and_cq_segments():
             expand_nodes(bad)
 
 
+def test_null_message_id_falls_back_to_real_id_instead_of_mismatching(stack):
+    # dict.get(key, default) 在键存在但值为 null 时不回落默认值；显式判空后
+    # 应以 real_id 核对身份，而不是误判"消息不一致"。
+    store = stack[4]
+    store.ingest(ACCOUNT, forward())
+
+    async def native(action, params):
+        if action == "get_forward_msg":
+            return {"status": "ok", "data": {"messages": nodes()}}
+        data = forward(-10, message=[{"type": "forward", "data": {"id": "real-id"}}])
+        data["message_id"] = None
+        data["real_id"] = -10
+        return {"status": "ok", "data": data}
+
+    query, calls, _ = reader(store, native=native)
+    value = execute(query, "read_forward", {"messageId": -10})
+    assert calls == [("get_msg", {"message_id": "-10"}), ("get_forward_msg", {"id": "real-id"})]
+    assert value["shown"] == 2
+
+
 @pytest.mark.parametrize(
     "field,value",
     [

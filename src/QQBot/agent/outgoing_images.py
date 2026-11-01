@@ -1,6 +1,8 @@
 """移植 send_image：限量下载 → 真实图片预览 → 当前聊天发送。
 
 图片只在本轮内存中保存；发送与预览使用同一份压缩字节，避免二次下载换图。
+发送配额以 service._send 对 session["sent"] 的统计为唯一口径——表情发送走
+同一入口；本类不再另记 _sends，避免回执去重时两套计数漂移。
 """
 
 import asyncio
@@ -10,7 +12,7 @@ import httpx
 
 from .images import ImageDownloader, prepare_image
 
-MAX_PREVIEWS, MAX_SENDS = 3, 3
+MAX_PREVIEWS, MAX_SENDS = 3, 3  # 发送配额的判定在 service._send，对 session["sent"] 统计。
 
 
 def public_image_url(raw):
@@ -36,7 +38,7 @@ class OutgoingImages:
     def __init__(self, permit, send, *, downloader=None):
         self._permit, self._send = permit, send
         self._downloader = downloader or ImageDownloader(url_validator=public_image_url)
-        self._cache, self._previews, self._sends = {}, 0, 0
+        self._cache, self._previews = {}, 0
 
     def confirm_previews(self):
         # Called only after a subsequent model response. A parallel tool batch
@@ -81,10 +83,7 @@ class OutgoingImages:
         prepared = self._cache.get(url)
         if prepared is None or not prepared["reviewed"]:
             raise ValueError("请先用 preview=true 查看图片，收到图片输入并确认合适后再发送")
-        if self._sends >= MAX_SENDS:
-            raise ValueError("每次处理最多发送 3 张图片")
         if not self._permit():
             raise asyncio.CancelledError()
         result = await self._send(args, prepared)
-        self._sends += result["sent"]
         return {**result, "preview": False}, []

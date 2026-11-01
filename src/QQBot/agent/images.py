@@ -268,10 +268,13 @@ class ImageReader:
                 if item["self"]
                 else native.get("user_id")
             )
+            native_mid = native.get("message_id")
+            if native_mid is None:
+                native_mid = native.get("real_id")
             if (
                 native.get("message_type") != kind
                 or str(native_peer) != peer
-                or numeric_id(native.get("message_id", native.get("real_id"))) != item["mid"]
+                or numeric_id(native_mid) != item["mid"]
                 or str(native.get("user_id")) != item["senderId"]
                 or ("self_id" in native and str(native["self_id"]) != account)
                 or (item["sequence"] and numeric_id(native.get("message_seq")) != item["sequence"])

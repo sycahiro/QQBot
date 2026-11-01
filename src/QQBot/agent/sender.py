@@ -8,7 +8,7 @@ import time
 
 from ..faces import FACES, NAMES
 from ..qq.engine import EngineError
-from ..storage.messages import chat_key, numeric_id, segments_text
+from ..storage.messages import chat_key, numeric_id
 
 
 class DeliveryError(RuntimeError):
@@ -27,76 +27,67 @@ def _validate_model_text(text):
 ARRAY_ECHO_LINE = re.compile(r'^\[\s*".*"\s*\]$')
 
 
-def without_duplicated_array_echo(text):
-    """Models sometimes append a JSON-encoded copy of the same text below the
-    real content (format confusion). That echo line adds nothing: drop it when
-    it repeats the surrounding lines; anything else stays untouched."""
-    lines = text.split("\n")
-    echoes = []
-    for line in lines:
-        stripped = line.strip()
-        decoded = None
-        if ARRAY_ECHO_LINE.match(stripped):
-            try:
-                decoded = json.loads(stripped)
-            except ValueError:
-                decoded = None
-        echoes.append(
-            decoded
-            if isinstance(decoded, list) and all(isinstance(item, str) for item in decoded)
-            else None
-        )
-    kept = [line for line, echo in zip(lines, echoes) if echo is None]
-    if kept and any(echo is not None for echo in echoes):
-        joined = "\n".join(part.strip() for part in kept if part.strip())
-        kept = [
-            line
-            for line, echo in zip(lines, echoes)
-            if echo is None or "\n".join(item.strip() for item in echo) != joined
-        ]
-        return "\n".join(kept)
-    return text
+def _decode_string_array(stripped):
+    """Decode a line only when it is a JSON array of strings, else ``None``."""
+    if not ARRAY_ECHO_LINE.match(stripped):
+        return None
+    try:
+        decoded = json.loads(stripped)
+    except ValueError:
+        return None
+    return (
+        decoded
+        if isinstance(decoded, list) and all(isinstance(item, str) for item in decoded)
+        else None
+    )
 
 
-def split_intended_segments(text):
-    """Split a single-string ``messages`` argument the way the model meant it.
+def normalize_model_text(text):
+    """Normalize one string the model meant as message list content, in one pass.
 
-    Two intent signals are honored, matching the double-encoded array decode
-    above: blank-line separated sentences, and lines that are a JSON string
-    array. A trailing array line after real text is the model trying to list
+    Three intent signals, matching the double-encoded array decode in
+    :meth:`Sender.send`: blank-line separated sentences become separate
+    messages; lines that are a JSON string array carry structured intent —
+    either an echo the model appended below the real content (format
+    confusion; dropped when its items repeat every other line) or a listing of
     the remaining segments (seen in the wild: ``正文\\n["第二句", "第三句"]``
-    was once sent literally, leaking the array into QQ); expand it into its
-    items instead of forwarding the brackets. Single newlines stay inside one
-    message; array items that merely repeat surrounding lines are already gone
-    via :func:`without_duplicated_array_echo`.
+    was once sent literally, leaking the array into QQ; expanded into items).
+    Single newlines stay inside one message. Echo removal must precede
+    expansion conceptually — that is why both live in this single scan instead
+    of two passes with a hidden ordering requirement.
     """
-    blocks = []
-    buffer = []
-    for line in text.split("\n"):
-        stripped = line.strip()
-        decoded = None
-        if ARRAY_ECHO_LINE.match(stripped):
-            try:
-                decoded = json.loads(stripped)
-            except ValueError:
-                decoded = None
-        if (
-            isinstance(decoded, list)
-            and decoded
-            and all(isinstance(item, str) for item in decoded)
-        ):
+    lines = text.split("\n")
+    decoded = [_decode_string_array(line.strip()) for line in lines]
+    rest = "\n".join(line.strip() for line, d in zip(lines, decoded) if d is None and line.strip())
+    blocks, buffer = [], []
+    for line, items in zip(lines, decoded):
+        if items is None:
+            buffer.append(line)
+        elif "\n".join(item.strip() for item in items) == rest:
+            continue  # 回声：与其余内容完全重复，丢弃
+        else:
             if buffer:
                 blocks.append("\n".join(buffer))
                 buffer = []
-            blocks.extend(item.strip() for item in decoded if item.strip())
-        else:
-            buffer.append(line)
+            blocks.extend(item.strip() for item in items if item.strip())
     if buffer:
         blocks.append("\n".join(buffer))
     parts = [
         part.strip() for block in blocks for part in re.split(r"\n\s*\n", block) if part.strip()
     ]
     return parts or [text]
+
+
+def _cap_segments(values):
+    """归一化拆出超过 4 条时，沿用「前 3 条拆开、其余合并」的既有策略。
+
+    合并条超过单条 3000 字上限时给出明确报错，而不是落进最终校验的
+    泛化提示——两者都使整批失败，但前者告诉模型该精简什么。
+    """
+    merged = "\n\n".join(values[3:])
+    if len(merged) > 3000:
+        raise ValueError("拆分出的消息超过 4 条且合并后仍超过 3000 字；请精简内容或减少空行分段")
+    return values[:3] + [merged]
 
 
 # QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
@@ -142,14 +133,13 @@ def face_segments(text):
 
 
 class Sender:
-    def __init__(self, connection, messages, permit, *, dispatch_lock=None, rapid_submit_history=None):
+    def __init__(self, connection, messages, permit, *, dispatch_lock=None):
         self._connection, self._messages, self._permit = connection, messages, permit
         self._lock = threading.Lock()
         self._dispatch_lock = dispatch_lock if dispatch_lock is not None else threading.Lock()
-        self._recent = rapid_submit_history if rapid_submit_history is not None else {}
+        self._recent = {}  # 拍一拍按 (账号, 聊天, 目标) 做 300 秒去重。
 
     def _prune_recent(self, now):
-        # Preserve the manual builder's shared dictionary identity.
         for key, stamp in list(self._recent.items()):
             if now - stamp >= 300:
                 self._recent.pop(key, None)
@@ -178,40 +168,44 @@ class Sender:
             if isinstance(values, str):
                 if re.match(r'^\[\s*"', text) and not text.endswith("]"):
                     raise ValueError("messages 包含错误的数组包装；请使用真正的字符串数组")
-                # Models keep passing one string with blank-line separated
-                # sentences although one message carries one thing. Honor the
-                # intended split like the double-encoded array decode above.
-                cleaned = without_duplicated_array_echo(values)
-                paragraphs = split_intended_segments(cleaned)
-                if len(paragraphs) > 4:
-                    paragraphs = paragraphs[:3] + ["\n\n".join(paragraphs[3:])]
-                values = paragraphs if len(paragraphs) >= 2 else [cleaned]
+                values = normalize_model_text(values)
+                if len(values) > 4:
+                    values = _cap_segments(values)
         if isinstance(values, list):
+            expanded, expanded_any = [], False
             for value in values:
-                if isinstance(value, str):
-                    stripped = value.strip()
-                    if (
-                        0 < len(stripped) <= 80000
-                        and stripped.startswith("[")
-                        and stripped.endswith("]")
-                    ):
-                        try:
-                            decoded = json.loads(stripped)
-                        except ValueError:
-                            decoded = None
-                        if not isinstance(decoded, list) and re.match(r'^\[\s*"', stripped):
-                            # 合法 JSON 原文是允许的正文（用户要求时）；解析失败又长
-                            # 得像损坏的字符串数组，才是模型把参数误写进正文。
-                            raise ValueError(
-                                "messages 元素像是被再次编码的数组；请直接使用字符串数组，"
-                                "每个元素写纯文本正文，不要把数组或引号塞进正文"
-                            )
-            values = [
-                without_duplicated_array_echo(value.replace("\x00", "")).strip()
-                if isinstance(value, str)
-                else value
-                for value in values
-            ]
+                if not isinstance(value, str):
+                    expanded.append(value)
+                    continue
+                cleaned = value.replace("\x00", "").strip()
+                decoded = None
+                if (
+                    0 < len(cleaned) <= 80000
+                    and cleaned.startswith("[")
+                    and cleaned.endswith("]")
+                ):
+                    try:
+                        decoded = json.loads(cleaned)
+                    except ValueError:
+                        decoded = None
+                    if not isinstance(decoded, list) and re.match(r'^\[\s*"', cleaned):
+                        # 合法 JSON 原文是允许的正文（用户要求时）；解析失败又长
+                        # 得像损坏的字符串数组，才是模型把参数误写进正文。
+                        raise ValueError(
+                            "messages 元素像是被再次编码的数组；请直接使用字符串数组，"
+                            "每个元素写纯文本正文，不要把数组或引号塞进正文"
+                        )
+                if isinstance(decoded, list) and all(isinstance(item, str) for item in decoded):
+                    expanded.append(cleaned)  # 整条就是合法 JSON 数组原文，按字面保留
+                    continue
+                parts = normalize_model_text(cleaned)
+                if parts != [cleaned]:
+                    expanded_any = True
+                expanded.extend(parts)
+            values = expanded
+            # 归一化拆出多条时沿用字符串路径的合并策略；显式传 5 条仍由下方校验拒绝。
+            if expanded_any and len(values) > 4:
+                values = _cap_segments(values)
         if (
             not isinstance(values, list)
             or not 1 <= len(values) <= 4
@@ -283,26 +277,6 @@ class Sender:
                 "sent 和 messageIds 仅统计此次调用新增的 QQ 回执，请勿为跳过项补发或换路重发"
             )
         return result
-
-    def send_segments(self, account, key, segments, archive, digest, session, *, action=None):
-        """Internal debug builder only; the caller validates segments and staged files."""
-        receipt = self._deliver(
-            account,
-            key,
-            segments,
-            ("debug", digest),
-            segments_text(archive),
-            0,
-            session,
-            lambda _: None,
-            archive=archive,
-            action=action,
-        )
-        return {
-            "sent": int(receipt is not None),
-            "messageIds": [receipt["messageId"]] if receipt else [],
-            "deduped": int(receipt is None),
-        }
 
     def _prefix(self, account, key, args):
         kind, _ = key.split(":")
@@ -432,7 +406,6 @@ class Sender:
         *,
         archive=None,
         image_permit=None,
-        action=None,
     ):
         kind, peer = key.split(":")
         # Shared queue for text, images and native reads. Recheck after waiting.
@@ -449,24 +422,15 @@ class Sender:
             # Agent sends dedupe only against confirmed receipts in this run.
             # A new trigger/manual rerun may intentionally repeat the same reply
             # or sticker. Never let an earlier run consume that new request.
-            # The manual debug builder retains its separate rapid-submit guard.
-            debug = token[0] == "debug"
             token = (account, key, token)
             delivery_key = hashlib.sha256(json.dumps(token, ensure_ascii=True).encode()).hexdigest()
-            if debug:
-                with self._lock:
-                    now = time.monotonic()
-                    self._prune_recent(now)
-                    if now - self._recent.get(token, -1000) < 300:
-                        return None
-            elif any(item.get("deliveryKey") == delivery_key for item in session["sent"]):
+            if any(item.get("deliveryKey") == delivery_key for item in session["sent"]):
                 return None
             try:
                 target_field = "user_id" if kind == "private" else "group_id"
-                body_field = "messages" if action else "message"
                 result = self._connection.invoke(
-                    action or ("send_private_msg" if kind == "private" else "send_group_msg"),
-                    {target_field: peer, body_field: segments},
+                    "send_private_msg" if kind == "private" else "send_group_msg",
+                    {target_field: peer, "message": segments},
                     expected_account=account,
                 )
             except EngineError as error:
@@ -485,19 +449,13 @@ class Sender:
             if result.get("status") != "ok" or not mid:
                 raise DeliveryError("QQ 未确认消息编号，已停止本轮且不会自动重发")
             receipt = {"text": text, "messageId": mid, "ts": int(time.time() * 1000)}
-            if not debug:
-                receipt["deliveryKey"] = delivery_key
+            receipt["deliveryKey"] = delivery_key
             if image_permit is not None:
                 receipt["type"] = "image"
             # Record the acknowledgement even if the user paused during the
             # already-dispatched action. Such a message cannot be unsent here.
             session["sent"].append(receipt)
             persist(session)
-            if debug:
-                with self._lock:
-                    if len(self._recent) >= 2048:
-                        self._recent.pop(next(iter(self._recent)))
-                    self._recent[token] = time.monotonic()
             self._messages.ingest(
                 account,
                 {

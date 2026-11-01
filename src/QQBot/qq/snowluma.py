@@ -35,6 +35,20 @@ ONEBOT_HTTP_PORT = 3000
 ONEBOT_WS_PORT = 3001
 START_TIMEOUT = 30.0
 
+# 业务侧实际调用的 OneBot 动作全集（contacts/bridge/sender/queries/service 逐一核对）。
+# 引擎层白名单是纵深防御：即便某个调用点被注入任意动作名，也到不了 OneBot HTTP。
+ONEBOT_ACTIONS = frozenset({
+    "get_login_info",
+    "get_msg",
+    "get_forward_msg",
+    "get_group_list",
+    "get_friend_list",
+    "send_private_msg",
+    "send_group_msg",
+    "delete_msg",
+    "send_poke",
+})
+
 MANAGE_ROUTES = {
     ("GET", "/api/processes"),
     ("GET", "/api/qq-list"),
@@ -496,25 +510,48 @@ class _WebSocket:
         data, self._buffer = self._buffer[:size], self._buffer[size:]
         return data
 
+    def _read_frame_body(self, second):
+        length = second & 0x7F
+        if length == 126:
+            length = struct.unpack(">H", self._read_exact(2))[0]
+        elif length == 127:
+            length = struct.unpack(">Q", self._read_exact(8))[0]
+        return self._read_exact(length) if length else b""
+
     def recv_text(self, timeout=30.0):
-        """返回下一条文本消息；ping 自动回 pong，close 抛 ConnectionError。"""
+        """返回下一条文本消息；ping 自动回 pong，close 抛 ConnectionError。
+
+        RFC6455 分片消息（FIN=0 起始帧 + 0x0 续帧）按序聚合后再解码，
+        不把续帧误当独立消息；控制帧允许穿插在分片之间。
+        """
         self._socket.settimeout(timeout)
         while True:
             first, second = self._read_exact(2)
             opcode = first & 0x0F
-            length = second & 0x7F
-            if length == 126:
-                length = struct.unpack(">H", self._read_exact(2))[0]
-            elif length == 127:
-                length = struct.unpack(">Q", self._read_exact(8))[0]
-            payload = self._read_exact(length) if length else b""
+            payload = self._read_frame_body(second)
             if opcode == 0x9:  # ping → pong
                 self._send_control(0xA, payload)
                 continue
             if opcode == 0x8:  # close
                 raise ConnectionError("closed")
-            if opcode in (0x1, 0x2, 0x0):
-                return payload.decode("utf-8", "replace")
+            if opcode not in (0x1, 0x2):
+                continue  # 未知帧型：丢弃，等待下一条可用消息
+            parts = [payload]
+            fragmenting = not first & 0x80
+            while fragmenting:
+                first, second = self._read_exact(2)
+                opcode = first & 0x0F
+                payload = self._read_frame_body(second)
+                if opcode == 0x9:
+                    self._send_control(0xA, payload)
+                    continue  # 控制帧可穿插于分片之间，不改变分片状态
+                if opcode == 0x8:
+                    raise ConnectionError("closed")
+                if opcode != 0x0:
+                    raise ConnectionError("协议错误：分片消息中收到非续帧")
+                parts.append(payload)
+                fragmenting = not first & 0x80
+            return b"".join(parts).decode("utf-8", "replace")
 
     def _send_control(self, opcode, payload):
         header = bytearray([0x80 | opcode, 0x80 | len(payload)]) + os.urandom(4)
@@ -622,6 +659,8 @@ class SnowLumaEngine:
         action = str(payload.get("action") or "")
         if not action:
             raise EngineError("INVALID_ACTION", "动作名为空")
+        if action not in ONEBOT_ACTIONS:
+            raise EngineError("INVALID_ACTION", f"动作不在业务白名单内：{action}")
         token = self._service.onebot_token or ""
         headers = {"Authorization": f"Bearer {token}"} if token else {}
         try:

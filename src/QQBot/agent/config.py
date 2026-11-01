@@ -63,6 +63,20 @@ def id_list(value):
     return list(dict.fromkeys(value))
 
 
+def fill_defaults(value, defaults):
+    """旧存档缺新字段时补默认值，未知字段仍由各校验按原样拒绝。
+
+    global.json 有兼容层；账号表里的嵌套结构（webSearch/sticker/persona/
+    mediaOptions）此前要求字段集合完全相等——版本升级加字段会把旧账号
+    存档整体判为「无法读取」。这里就地补齐缺失键后再走原校验。
+    """
+    if isinstance(value, dict):
+        for key, default in defaults.items():
+            if key not in value:
+                value[key] = copy.deepcopy(default)
+    return value
+
+
 def validate_api(api):
     if isinstance(api, dict):
         for field in ("protocol", "sendTemperature", "maxOutputTokens", "chatTokenLimitField"):
@@ -122,16 +136,18 @@ def validate(config):
         raise ValueError("机器人设置包含未知字段")
     validate_api(config["api"])
     validate_profiles(config, validate_api)
+    fill_defaults(config["mediaOptions"], DEFAULT_MEDIA)
     validate_media(config)
-    validate_search(config["webSearch"])
+    validate_search(fill_defaults(config["webSearch"], DEFAULT_SEARCH))
+    sticker = fill_defaults(config["sticker"], DEFAULTS["sticker"])
     if (
-        not isinstance(config["sticker"], dict)
-        or set(config["sticker"]) != set(DEFAULTS["sticker"])
-        or any(type(v) is not bool for v in config["sticker"].values())
+        not isinstance(sticker, dict)
+        or set(sticker) != set(DEFAULTS["sticker"])
+        or any(type(v) is not bool for v in sticker.values())
     ):
         raise ValueError("表情库开关格式无效")
     for field in ("persona", "defaultPersona"):
-        persona = config[field]
+        persona = fill_defaults(config[field], DEFAULTS[field])
         if not isinstance(persona, dict) or set(persona) != set(DEFAULTS[field]):
             raise ValueError("人设设置字段不完整")
         if any(not isinstance(value, str) or len(value) > 20000 for value in persona.values()):

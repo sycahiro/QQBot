@@ -283,10 +283,13 @@ class DesktopBridge:
             if not isinstance(account, str):
                 raise ValueError("请先连接机器人账号")
             selected = self._account(account)
-            if self._connection:
-                items = contacts.read(self._connection, selected)
-            else:
+            if not self._connection:
                 raise EngineError("NOT_READY", "QQ 联系人服务尚未就绪")
+            # contacts.read 连发两个原生动作，且 connection._operation 是非阻塞
+            # 锁：与 agent 发送/读取并发时直接 BUSY 报错。与 agent 的原生操作
+            # 共用同一把锁排队，等待而不是失败。
+            with self._agent.native_lock if self._agent else self._native_fallback_lock:
+                items = contacts.read(self._connection, selected)
             self._account(selected)
             if self._messages is not None:
                 self._messages.set_names(
@@ -1022,8 +1025,8 @@ class DesktopBridge:
             selected = self._account(account)
             if self._stickers is None:
                 raise ValueError("表情库尚未就绪")
-            if self._agent:
-                self._agent.pause("表情备注已调整，请确认后重新开启自动回复")
+            # 与工具侧 sticker_note 口径一致：改备注不影响进行中的自动回复，
+            # 不需要为此全局暂停（发送前的 matches 许可按实时数据校验）。
             return {
                 "account": selected,
                 "item": self._stickers.note(selected, item, note, tags, usage),

@@ -26,7 +26,7 @@ class StickerTools:
         )
         self._permit, self._collect, self._note, self._send = permit, collect, note, send
         self._reviewed_sources, self._cache = set(), {}
-        self._views, self._collects, self._sends = 0, 0, 0
+        self._views, self._collects = 0, 0
 
     def confirm_previews(self):
         self._reviewed_sources = self._images.prepared_ids()
@@ -112,8 +112,8 @@ class StickerTools:
             image = self._cache.get(item)
             if not image or not image["reviewed"]:
                 raise ValueError("请先用 get_sticker_image 看表情，在下一次模型回应后再发送")
-            if self._sends >= 3:
-                raise ValueError("一次处理最多发送 3 张表情")
+            # 发送配额由 service._send 对 session["sent"] 统一判定（图片+表情
+            # 共享额度），这里不再另记计数。
             current = self._store.get(self._account, item)
             if current["digest"] != image["digest"]:
                 raise ValueError("表情图片已经变化，请重新查看")
@@ -122,7 +122,6 @@ class StickerTools:
             values = {k: v for k, v in args.items() if k != "stickerId"}
             values["note"] = ""  # A sticker is a separate image, without an injected caption.
             result = await self._send(values, image, item)
-            self._sends += result["sent"]
             if result["sent"]:
                 try:
                     self._store.mark_used(self._account, item)

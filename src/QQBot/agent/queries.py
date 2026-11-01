@@ -89,10 +89,15 @@ def verify_native(account, key, item, response):
         if item["self"]
         else native.get("user_id")
     )
+    # dict.get(key, default) 在键存在但值为 null 时不回落默认值；OneBot 正常
+    # 不会如此，但显式判空避免 null 被当真值比较后误判"消息不一致"。
+    native_mid = native.get("message_id")
+    if native_mid is None:
+        native_mid = native.get("real_id")
     if (
         native.get("message_type") != kind
         or str(target) != peer
-        or numeric_id(native.get("message_id", native.get("real_id"))) != item["mid"]
+        or numeric_id(native_mid) != item["mid"]
         or str(native.get("user_id")) != item["senderId"]
         or ("self_id" in native and str(native["self_id"]) != account)
         or (item["sequence"] and numeric_id(native.get("message_seq")) != item["sequence"])

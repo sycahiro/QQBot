@@ -4,6 +4,7 @@ import asyncio
 import copy
 import json
 import logging
+import sqlite3
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -593,6 +594,20 @@ class AgentService:
             self._sessions.save(session)
 
     async def _run(self, account, key, batch, epoch, retry_of=None):
+        # 预备阶段（读配置/取上下文/认领/建会话/拼提示词）没有 try 保护，SQLite
+        # 瞬时 BUSY 会沿 _done 全局 pause 掉整个自动回复——一次抖动的代价远超
+        # 收益。存档层 RLock 已串行化写入且连接 timeout=3，能穿透的 BUSY 极罕
+        # 见；认领失败在事务内回滚、消息保持未读，下一条消息会重新触发。工具
+        # 循环内的异常由其自身的 except Exception 收编为会话错误记录，不受此
+        # 包裹影响。因此这里只记日志并放弃本轮，不升级为全局暂停。
+        try:
+            return await self._prepare_and_run(account, key, batch, epoch, retry_of)
+        except asyncio.CancelledError:
+            raise
+        except sqlite3.OperationalError:
+            logger.exception("Agent 预备阶段遇到数据库错误，放弃本轮，未全局暂停自动回复")
+
+    async def _prepare_and_run(self, account, key, batch, epoch, retry_of=None):
         config = self._settings.read(account)
         context = self._messages.context(
             account,

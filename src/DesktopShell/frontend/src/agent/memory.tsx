@@ -37,6 +37,7 @@ export function Memory({ ready }: { ready: boolean }) {
     const [roster, setRoster] = useState<RosterMember[] | null>(null);
     const [rosterQuery, setRosterQuery] = useState('');
     const [rosterBusy, setRosterBusy] = useState(false);
+    const [rosterNonce, bumpRoster] = useState(0);
     const selected = chats.some((c) => c.chatKey === chosen) ? chosen : chats[0]?.chatKey;
     const current = chats.find((c) => c.chatKey === selected);
     const marker = useRef('');
@@ -211,7 +212,7 @@ export function Memory({ ready }: { ready: boolean }) {
     const group = selected?.startsWith('group:');
     const peerId = selected?.startsWith('private:') ? selected.split(':')[1] : '';
     useEffect(() => {
-        if (!creating || !group || !selected || !account || roster || rosterBusy) return;
+        if (!creating || !group || !selected || !account || roster) return;
         let active = true;
         setRosterBusy(true);
         window
@@ -222,7 +223,7 @@ export function Memory({ ready }: { ready: boolean }) {
                 else setError(result.ok ? '连接账号已变化，请重新打开记忆' : result.error.message);
             })
             .catch(() => {
-                if (active) setError('群成员列表读取失败，请点击刷新重试');
+                if (active) setError('群成员列表读取失败，请点击重新读取重试');
             })
             .finally(() => {
                 if (active) setRosterBusy(false);
@@ -230,7 +231,9 @@ export function Memory({ ready }: { ready: boolean }) {
         return () => {
             active = false;
         };
-    }, [creating, group, selected, account, roster, rosterBusy]);
+        // rosterBusy 不进依赖：它的变化只是本 effect 自己的产物，进去会造成
+        // 「cleanup 置废 active → 新一轮被守卫挡住 → 回调全部跳过」的死锁。
+    }, [creating, group, selected, account, roster, rosterNonce]);
     const prefilled = (userId: string) =>
         members
             .find((m) => m.userId === userId)
@@ -338,7 +341,7 @@ export function Memory({ ready }: { ready: boolean }) {
                         </button>
                     </div>
                     {creating && (
-                        <section className="ui-card memory-member">
+                        <section className="ui-card memory-member memory-create-card">
                             <div className="console-panel-heading">
                                 <div>
                                     <h3>
@@ -377,6 +380,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                             onClick={() => {
                                                 setRoster(null);
                                                 setRosterQuery('');
+                                                bumpRoster((v) => v + 1);
                                             }}
                                         >
                                             <RefreshCw

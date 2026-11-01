@@ -388,63 +388,66 @@ export function StorageSettings({ ready }: { ready: boolean }) {
                                 等待当前任务停止后再刷新此页面。
                             </p>
                         )}
-                        {!data.accounts.length ? (
-                            <p className="action-notice">还没有账号数据。</p>
-                        ) : (
-                            <AnimatedList className="storage-accounts" staged>
-                                {data.accounts.map((account) => (
-                                    <div className="storage-account" key={account.account}>
-                                        <div className="storage-account-heading">
-                                            <strong>QQ {account.account}</strong>
-                                            <span>
-                                                {bytes(account.databaseBytes + account.indexBytes)}{' '}
-                                                · 临时文件 {bytes(account.temporaryBytes)}
-                                            </span>
-                                        </div>
-                                        <div className="storage-categories">
-                                            {categories.map((category) => (
-                                                <div className="storage-category" key={category.id}>
-                                                    <div>
-                                                        <strong>{category.label}</strong>
-                                                        <p>{category.description}</p>
-                                                        <small>
-                                                            {category.id === 'indexes'
-                                                                ? bytes(account.indexBytes)
-                                                                : `${account.counts[category.id]} 条记录`}
-                                                        </small>
-                                                    </div>
-                                                    <button
-                                                        className="btn"
-                                                        aria-label={`清理 ${account.account} 的${category.label}`}
-                                                        disabled={
-                                                            busy ||
-                                                            data.busy ||
-                                                            (category.id === 'indexes'
-                                                                ? !account.indexFiles
-                                                                : !account.counts[category.id])
-                                                        }
-                                                        onClick={() =>
-                                                            void cleanup(
-                                                                {
-                                                                    scope: 'account',
-                                                                    account: account.account,
-                                                                    category: category.id,
-                                                                },
-                                                                `清理${category.label}`,
-                                                                `删除 QQ ${account.account} 的${category.label}，无法撤销。${category.description}`,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 size={15} />
-                                                        清理
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
+                        <AnimatedList className="storage-accounts" staged>
+                            {data.accounts.map((account) => (
+                                <div className="storage-account" key={account.account}>
+                                    <div className="storage-account-heading">
+                                        <strong>QQ {account.account}</strong>
+                                        <span>
+                                            {bytes(account.databaseBytes + account.indexBytes)} ·
+                                            临时文件 {bytes(account.temporaryBytes)}
+                                        </span>
                                     </div>
-                                ))}
-                            </AnimatedList>
-                        )}
+                                    <div className="storage-categories">
+                                        {categories.map((category) => (
+                                            <div className="storage-category" key={category.id}>
+                                                <div>
+                                                    <strong>{category.label}</strong>
+                                                    <p>{category.description}</p>
+                                                    <small>
+                                                        {category.id === 'indexes'
+                                                            ? bytes(account.indexBytes)
+                                                            : `${account.counts[category.id]} 条记录`}
+                                                    </small>
+                                                </div>
+                                                <button
+                                                    className="btn"
+                                                    aria-label={`清理 ${account.account} 的${category.label}`}
+                                                    disabled={
+                                                        busy ||
+                                                        data.busy ||
+                                                        (category.id === 'indexes'
+                                                            ? !account.indexFiles
+                                                            : !account.counts[category.id])
+                                                    }
+                                                    onClick={() =>
+                                                        void cleanup(
+                                                            {
+                                                                scope: 'account',
+                                                                account: account.account,
+                                                                category: category.id,
+                                                            },
+                                                            `清理${category.label}`,
+                                                            `删除 QQ ${account.account} 的${category.label}，无法撤销。${category.description}`,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 size={15} />
+                                                    清理
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                            {/* 空状态放在列表内部：删除最后一个账号时列表不卸载，
+                                账号卡收起幽灵可以完整播放。 */}
+                            {!data.accounts.length && (
+                                <p className="action-notice" key="empty">
+                                    还没有账号数据。
+                                </p>
+                            )}
+                        </AnimatedList>
                         {data.accounts.length > 1 && (
                             <Disclosure title="批量清理">
                                 <div className="storage-batch">

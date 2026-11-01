@@ -370,11 +370,6 @@ export function Memory({ ready }: { ready: boolean }) {
                             <h3>正在读取记忆…</h3>
                             <p>模型通过记忆工具记录稳定信息后会显示在这里。</p>
                         </div>
-                    ) : !visible.length && !creating ? (
-                        <div className="desktop-empty">
-                            <h3>暂无长期印象</h3>
-                            <p>模型记录或手动新建的成员记忆会显示在这里。</p>
-                        </div>
                     ) : (
                         <AnimatedList className="desktop-sections" staged>
                             {creating && (
@@ -603,6 +598,14 @@ export function Memory({ ready }: { ready: boolean }) {
                                     </section>
                                 );
                             })}
+                            {/* 空状态放在列表内部：清空/取消新建时列表不卸载，
+                                收起幽灵与空状态补位都在同一动画列表里过渡。 */}
+                            {!visible.length && !creating && (
+                                <div className="desktop-empty" key="empty">
+                                    <h3>暂无长期印象</h3>
+                                    <p>模型记录或手动新建的成员记忆会显示在这里。</p>
+                                </div>
+                            )}
                         </AnimatedList>
                     )}
                 </RecordBrowser>

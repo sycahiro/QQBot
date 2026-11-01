@@ -2262,13 +2262,35 @@ p.action-notice {
 .memory-member h3 {
     font-size: 14px;
 }
-.memory-create-bar {
+.memory-member-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+}
+.memory-member-id {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.memory-member-id strong {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+.memory-member-id small {
+    color: var(--muted-foreground);
+    font-size: 11px;
+}
+.memory-member-body {
+    margin-top: 16px;
+}
+.memory-member-tools {
     display: flex;
     justify-content: flex-end;
-    margin-bottom: 16px;
-}
-.memory-create-card {
-    margin-bottom: 24px;
+    margin-bottom: 12px;
 }
 .memory-save {
     margin-top: 14px;

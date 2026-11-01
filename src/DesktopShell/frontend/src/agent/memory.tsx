@@ -8,15 +8,19 @@ import {
 import { useConfirm } from '../components/confirmation';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatedList } from '../components/animated-list';
-import { Brain, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
+import { Brain, ChevronDown, RefreshCw, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { chatLabel, type MemoryChat, type MemoryMember } from '../business';
 import { MemoryReview } from './memory-review';
 import { Notice } from '../components/notice';
+import { Collapse } from '../components/presence';
 
 interface RosterMember {
     id: string;
     name: string;
 }
+
+// 中文名按拼音、英文按字母混排；与后端的号码排序解耦，列表位置只由名字决定。
+const nameCollator = new Intl.Collator('zh-Hans-CN', { numeric: true });
 
 export function Memory({ ready }: { ready: boolean }) {
     const confirm = useConfirm();
@@ -38,6 +42,7 @@ export function Memory({ ready }: { ready: boolean }) {
     const [rosterQuery, setRosterQuery] = useState('');
     const [rosterBusy, setRosterBusy] = useState(false);
     const [rosterNonce, bumpRoster] = useState(0);
+    const [expanded, setExpanded] = useState<string | null>(null);
     const selected = chats.some((c) => c.chatKey === chosen) ? chosen : chats[0]?.chatKey;
     const current = chats.find((c) => c.chatKey === selected);
     const marker = useRef('');
@@ -88,6 +93,7 @@ export function Memory({ ready }: { ready: boolean }) {
         setCreateDraft('');
         setRoster(null);
         setRosterQuery('');
+        setExpanded(null);
     }, [account, selected]);
     useEffect(() => {
         if (!ready || !selected || !account) return;
@@ -209,6 +215,21 @@ export function Memory({ ready }: { ready: boolean }) {
         }
     };
     const visible = detailKey === markerValue ? members : [];
+    const sortedMembers = [...visible].sort(
+        (a, b) =>
+            nameCollator.compare(a.target || a.userId, b.target || b.userId) ||
+            nameCollator.compare(a.userId, b.userId),
+    );
+    const sortedRoster = roster
+        ? [...roster].sort(
+              (a, b) => nameCollator.compare(a.name, b.name) || nameCollator.compare(a.id, b.id),
+          )
+        : roster;
+    const rosterMatches = sortedRoster
+        ? sortedRoster.filter((m) =>
+              `${m.name} ${m.id}`.toLowerCase().includes(rosterQuery.trim().toLowerCase()),
+          )
+        : [];
     const group = selected?.startsWith('group:');
     const peerId = selected?.startsWith('private:') ? selected.split(':')[1] : '';
     useEffect(() => {
@@ -333,209 +354,255 @@ export function Memory({ ready }: { ready: boolean }) {
                         title={current ? chatLabel(current).title : ''}
                         subtitle={current ? chatLabel(current).number : ''}
                         icon={<Brain size={18} />}
+                        actions={
+                            <button
+                                className="btn"
+                                disabled={busy || !selected || creating}
+                                onClick={startCreate}
+                            >
+                                <UserPlus size={15} />
+                                新建记忆
+                            </button>
+                        }
                     />
-                    <div className="memory-create-bar">
-                        <button className="btn" disabled={busy || !selected} onClick={startCreate}>
-                            <UserPlus size={15} />
-                            {creating ? '填写记忆内容' : '新建记忆'}
-                        </button>
-                    </div>
-                    {creating && (
-                        <section className="ui-card memory-member memory-create-card">
-                            <div className="console-panel-heading">
-                                <div>
-                                    <h3>
-                                        {picked
-                                            ? picked.name || '聊天成员'
-                                            : group
-                                              ? '选择群成员'
-                                              : '新建私聊记忆'}
-                                    </h3>
-                                    <p>
-                                        {picked
-                                            ? `QQ 号：${picked.id}`
-                                            : group
-                                              ? '从下方群成员列表中选择一位'
-                                              : `记录对象：${peerId}`}
-                                    </p>
-                                </div>
-                                <button className="btn" disabled={busy} onClick={cancelCreate}>
-                                    <X size={15} />
-                                    取消
-                                </button>
-                            </div>
-                            {group && !picked && (
-                                <div className="form-wide">
-                                    <div className="contact-picker-toolbar">
-                                        <input
-                                            aria-label="搜索群成员"
-                                            placeholder="搜索群名片、昵称或号码"
-                                            value={rosterQuery}
-                                            onChange={(e) => setRosterQuery(e.target.value)}
-                                        />
-                                        <button
-                                            type="button"
-                                            className="btn"
-                                            disabled={rosterBusy}
-                                            onClick={() => {
-                                                setRoster(null);
-                                                setRosterQuery('');
-                                                bumpRoster((v) => v + 1);
-                                            }}
-                                        >
-                                            <RefreshCw
-                                                size={15}
-                                                className={rosterBusy ? 'qq-scanning' : undefined}
-                                            />
-                                            {roster ? '刷新成员' : '重新读取'}
-                                        </button>
-                                    </div>
-                                    {roster && (
-                                        <div className="contact-picker-list">
-                                            {roster
-                                                .filter((m) =>
-                                                    `${m.name} ${m.id}`
-                                                        .toLowerCase()
-                                                        .includes(rosterQuery.trim().toLowerCase()),
-                                                )
-                                                .slice(0, 200)
-                                                .map((m) => (
-                                                    <button
-                                                        type="button"
-                                                        className="contact-picker-item"
-                                                        key={m.id}
-                                                        disabled={busy}
-                                                        onClick={() => choosePicked(m)}
-                                                    >
-                                                        <span>
-                                                            <strong>{m.name}</strong>
-                                                            <small>{m.id}</small>
-                                                        </span>
-                                                    </button>
-                                                ))}
-                                            {!roster.some((m) =>
-                                                `${m.name} ${m.id}`
-                                                    .toLowerCase()
-                                                    .includes(rosterQuery.trim().toLowerCase()),
-                                            ) && <p className="action-notice">没有匹配成员</p>}
-                                            {roster.length > 200 && (
-                                                <small>
-                                                    共 {roster.length} 位成员，请用搜索缩小范围。
-                                                </small>
-                                            )}
-                                        </div>
-                                    )}
-                                    {rosterBusy && <p className="action-notice">正在读取群成员…</p>}
-                                </div>
-                            )}
-                            {picked && (
-                                <>
-                                    {members.some((m) => m.userId === picked.id) && (
-                                        <p className="action-notice">
-                                            该成员已有记忆，保存将整体替换原有内容。
-                                        </p>
-                                    )}
-                                    <div className="bot-form-grid">
-                                        <label className="form-wide">
-                                            长期印象（每行一条，单条最多 120 字）
-                                            <textarea
-                                                rows={4}
-                                                disabled={busy}
-                                                value={createDraft}
-                                                onChange={(e) => {
-                                                    dirty.current = true;
-                                                    setCreateDraft(e.target.value);
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div className="memory-save">
-                                        <button
-                                            className="btn btn-primary"
-                                            disabled={busy}
-                                            onClick={() => void saveCreate()}
-                                        >
-                                            <Save size={15} />
-                                            保存记忆
-                                        </button>
-                                    </div>
-                                </>
-                            )}
-                        </section>
-                    )}
-                    {!visible.length ? (
+                    {detailKey !== markerValue ? (
                         <div className="desktop-empty">
-                            <h3>{detailKey !== markerValue ? '正在读取记忆…' : '暂无长期印象'}</h3>
+                            <h3>正在读取记忆…</h3>
                             <p>模型通过记忆工具记录稳定信息后会显示在这里。</p>
                         </div>
+                    ) : !visible.length && !creating ? (
+                        <div className="desktop-empty">
+                            <h3>暂无长期印象</h3>
+                            <p>模型记录或手动新建的成员记忆会显示在这里。</p>
+                        </div>
                     ) : (
-                        <AnimatedList className="desktop-sections">
-                            {visible.map((member) => (
+                        <AnimatedList className="desktop-sections" staged>
+                            {creating && (
                                 <section
                                     className="ui-card memory-member"
-                                    key={markerValue + member.userId}
+                                    key="create"
+                                    aria-label="新建成员记忆"
                                 >
                                     <div className="console-panel-heading">
                                         <div>
-                                            <h3>{member.target || '聊天成员'}</h3>
-                                            <p>QQ 号：{member.userId}</p>
+                                            <h3>
+                                                {picked
+                                                    ? picked.name || '聊天成员'
+                                                    : group
+                                                      ? '选择群成员'
+                                                      : '新建私聊记忆'}
+                                            </h3>
+                                            <p>
+                                                {picked
+                                                    ? `QQ 号：${picked.id}`
+                                                    : group
+                                                      ? '从下方群成员列表中选择一位'
+                                                      : `记录对象：${peerId}`}
+                                            </p>
                                         </div>
-                                        {group && (
-                                            <button
-                                                className="btn"
-                                                disabled={busy}
-                                                onClick={() => void remove(false, member)}
-                                            >
-                                                <Trash2 size={15} />
-                                                删除该成员记忆
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="bot-form-grid">
-                                        <label className="form-wide">
-                                            长期印象（每行一条，单条最多 120 字）
-                                            <textarea
-                                                rows={4}
-                                                disabled={busy}
-                                                value={
-                                                    drafts[member.userId] ??
-                                                    member.entries.map((e) => e.content).join('\n')
-                                                }
-                                                onChange={(e) => {
-                                                    dirty.current = true;
-                                                    setDrafts((v) => ({
-                                                        ...v,
-                                                        [member.userId]: e.target.value,
-                                                    }));
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-                                    <div className="memory-save">
                                         <button
-                                            className="btn btn-primary"
+                                            className="btn"
                                             disabled={busy}
-                                            onClick={() => void save(member)}
+                                            onClick={cancelCreate}
                                         >
-                                            <Save size={15} />
-                                            保存
+                                            <X size={15} />
+                                            取消
                                         </button>
                                     </div>
-                                    {account && selected && (
-                                        <MemoryReview
-                                            account={account}
-                                            chatKey={selected}
-                                            member={member}
-                                            disabled={busy || hasDrafts}
-                                            onApplied={() => {
-                                                setNotice('整理结果已应用；自动回复已暂停。');
-                                                setMembers([]);
-                                                refresh((v) => v + 1);
-                                            }}
-                                        />
+                                    {group && !picked && (
+                                        <div className="form-wide">
+                                            <div className="contact-picker-toolbar">
+                                                <input
+                                                    aria-label="搜索群成员"
+                                                    placeholder="搜索群名片、昵称或号码"
+                                                    value={rosterQuery}
+                                                    onChange={(e) => setRosterQuery(e.target.value)}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="btn"
+                                                    disabled={rosterBusy}
+                                                    onClick={() => {
+                                                        setRoster(null);
+                                                        setRosterQuery('');
+                                                        bumpRoster((v) => v + 1);
+                                                    }}
+                                                >
+                                                    <RefreshCw
+                                                        size={15}
+                                                        className={
+                                                            rosterBusy ? 'qq-scanning' : undefined
+                                                        }
+                                                    />
+                                                    {roster ? '刷新成员' : '重新读取'}
+                                                </button>
+                                            </div>
+                                            {sortedRoster && (
+                                                <div className="contact-picker-list">
+                                                    {rosterMatches.slice(0, 200).map((m) => (
+                                                        <button
+                                                            type="button"
+                                                            className="contact-picker-item"
+                                                            key={m.id}
+                                                            disabled={busy}
+                                                            onClick={() => choosePicked(m)}
+                                                        >
+                                                            <span>
+                                                                <strong>{m.name}</strong>
+                                                                <small>{m.id}</small>
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                    {!rosterMatches.length && (
+                                                        <p className="action-notice">
+                                                            没有匹配成员
+                                                        </p>
+                                                    )}
+                                                    {sortedRoster.length > 200 && (
+                                                        <small>
+                                                            共 {sortedRoster.length}
+                                                            位成员，请用搜索缩小范围。
+                                                        </small>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {rosterBusy && (
+                                                <p className="action-notice">正在读取群成员…</p>
+                                            )}
+                                        </div>
+                                    )}
+                                    {picked && (
+                                        <>
+                                            {members.some((m) => m.userId === picked.id) && (
+                                                <p className="action-notice">
+                                                    该成员已有记忆，保存将整体替换原有内容。
+                                                </p>
+                                            )}
+                                            <div className="bot-form-grid">
+                                                <label className="form-wide">
+                                                    长期印象（每行一条，单条最多 120 字）
+                                                    <textarea
+                                                        rows={4}
+                                                        disabled={busy}
+                                                        value={createDraft}
+                                                        onChange={(e) => {
+                                                            dirty.current = true;
+                                                            setCreateDraft(e.target.value);
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+                                            <div className="memory-save">
+                                                <button
+                                                    className="btn btn-primary"
+                                                    disabled={busy}
+                                                    onClick={() => void saveCreate()}
+                                                >
+                                                    <Save size={15} />
+                                                    保存记忆
+                                                </button>
+                                            </div>
+                                        </>
                                     )}
                                 </section>
-                            ))}
+                            )}
+                            {sortedMembers.map((member) => {
+                                const open = expanded === member.userId;
+                                return (
+                                    <section
+                                        className="ui-card memory-member"
+                                        key={markerValue + member.userId}
+                                    >
+                                        <button
+                                            type="button"
+                                            className="memory-member-toggle"
+                                            aria-expanded={open}
+                                            disabled={busy}
+                                            onClick={() => setExpanded(open ? null : member.userId)}
+                                        >
+                                            <span
+                                                className={
+                                                    'disclosure-chevron' + (open ? ' is-open' : '')
+                                                }
+                                            >
+                                                <ChevronDown size={15} />
+                                            </span>
+                                            <span className="memory-member-id">
+                                                <strong>{member.target || '聊天成员'}</strong>
+                                                <small>
+                                                    QQ 号：{member.userId} · {member.entries.length}{' '}
+                                                    条记忆
+                                                </small>
+                                            </span>
+                                        </button>
+                                        <Collapse open={open}>
+                                            <div className="memory-member-body">
+                                                <div className="memory-member-tools">
+                                                    {group && (
+                                                        <button
+                                                            className="btn"
+                                                            disabled={busy}
+                                                            onClick={() =>
+                                                                void remove(false, member)
+                                                            }
+                                                        >
+                                                            <Trash2 size={15} />
+                                                            删除该成员记忆
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="bot-form-grid">
+                                                    <label className="form-wide">
+                                                        长期印象（每行一条，单条最多 120 字）
+                                                        <textarea
+                                                            rows={4}
+                                                            disabled={busy}
+                                                            value={
+                                                                drafts[member.userId] ??
+                                                                member.entries
+                                                                    .map((e) => e.content)
+                                                                    .join('\n')
+                                                            }
+                                                            onChange={(e) => {
+                                                                dirty.current = true;
+                                                                setDrafts((v) => ({
+                                                                    ...v,
+                                                                    [member.userId]: e.target.value,
+                                                                }));
+                                                            }}
+                                                        />
+                                                    </label>
+                                                </div>
+                                                <div className="memory-save">
+                                                    <button
+                                                        className="btn btn-primary"
+                                                        disabled={busy}
+                                                        onClick={() => void save(member)}
+                                                    >
+                                                        <Save size={15} />
+                                                        保存
+                                                    </button>
+                                                </div>
+                                                {account && selected && (
+                                                    <MemoryReview
+                                                        account={account}
+                                                        chatKey={selected}
+                                                        member={member}
+                                                        disabled={busy || hasDrafts}
+                                                        onApplied={() => {
+                                                            setNotice(
+                                                                '整理结果已应用；自动回复已暂停。',
+                                                            );
+                                                            setMembers([]);
+                                                            refresh((v) => v + 1);
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                        </Collapse>
+                                    </section>
+                                );
+                            })}
                         </AnimatedList>
                     )}
                 </RecordBrowser>

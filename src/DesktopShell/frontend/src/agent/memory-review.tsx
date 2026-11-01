@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Sparkles, Check, X } from 'lucide-react';
+import { Sparkles, Check, X, LoaderCircle } from 'lucide-react';
 import type { MemoryPreview, MemoryMember } from '../business';
 import { Notice } from '../components/notice';
 import { Collapse } from '../components/presence';
@@ -85,7 +85,7 @@ export function MemoryReview({
     return (
         <div className="memory-review">
             <button className="btn" disabled={disabled || busy} onClick={() => void generate()}>
-                <Sparkles size={15} className={busy ? 'qq-scanning' : undefined} />
+                {busy ? <LoaderCircle size={15} className="qq-scanning" /> : <Sparkles size={15} />}
                 整理预览
             </button>
             <p className="action-notice">让模型整理该成员的记忆，检查结果后确认应用。</p>

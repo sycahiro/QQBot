@@ -577,6 +577,7 @@ strong {
 .network-page-text {
     max-height: 420px;
     overflow: auto;
+    scrollbar-gutter: stable;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     padding: 18px;
@@ -1656,6 +1657,7 @@ p.action-notice {
     margin: 8px 0 0;
     max-height: 340px;
     overflow: auto;
+    scrollbar-gutter: stable;
 }
 .session-context-entry p {
     white-space: pre-wrap;
@@ -1791,6 +1793,7 @@ p.action-notice {
     max-height: calc(100dvh - 64px);
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
 }
 .notice-host:empty {
     display: none;
@@ -1831,6 +1834,7 @@ p.action-notice {
     overflow-wrap: anywhere;
     max-height: 160px;
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 .ui-notice > .btn-bare {
     flex-shrink: 0;
@@ -2032,6 +2036,7 @@ p.action-notice {
     min-height: 0;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    scrollbar-gutter: stable;
 }
 .ui-select-option {
     display: flex;
@@ -2302,6 +2307,8 @@ p.action-notice {
     overflow-x: hidden;
     overflow-anchor: none;
     padding: 1px 5px 4px 1px;
+    /* 滚动条出现/消失时保留 12px 槽位，卡片不再被横向挤压闪动。 */
+    scrollbar-gutter: stable;
 }
 .archive-detail {
     max-height: calc(100vh - 390px);
@@ -2309,6 +2316,7 @@ p.action-notice {
     /* 详情内容由后台轮询增量更新（状态卡、回执、耗时都会增高）。
        这里必须保留浏览器原生滚动锚定：视口上方内容增高时自动补偿
        scrollTop，用户的阅读位置不会被强行推走。 */
+    scrollbar-gutter: stable;
 }
 .archive-detail.archive-thread-panel {
     display: flex;
@@ -2339,6 +2347,7 @@ p.action-notice {
     max-height: 60vh;
     overflow: auto;
     overflow-anchor: none;
+    scrollbar-gutter: stable;
     background: var(--muted);
     border-radius: 10px;
     padding: 17px;
@@ -2404,6 +2413,7 @@ html.theme-changing *::after {
 .contact-picker-list {
     max-height: 280px;
     overflow: auto;
+    scrollbar-gutter: stable;
     display: grid;
     align-content: start;
     gap: 6px;
@@ -2565,6 +2575,7 @@ html.theme-changing *::after {
     overflow-wrap: anywhere;
     max-height: 40vh;
     overflow-y: auto;
+    scrollbar-gutter: stable;
 }
 .confirmation-danger {
     color: var(--destructive, #ef4444);

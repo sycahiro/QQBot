@@ -58,6 +58,47 @@ def without_duplicated_array_echo(text):
     return text
 
 
+def split_intended_segments(text):
+    """Split a single-string ``messages`` argument the way the model meant it.
+
+    Two intent signals are honored, matching the double-encoded array decode
+    above: blank-line separated sentences, and lines that are a JSON string
+    array. A trailing array line after real text is the model trying to list
+    the remaining segments (seen in the wild: ``正文\\n["第二句", "第三句"]``
+    was once sent literally, leaking the array into QQ); expand it into its
+    items instead of forwarding the brackets. Single newlines stay inside one
+    message; array items that merely repeat surrounding lines are already gone
+    via :func:`without_duplicated_array_echo`.
+    """
+    blocks = []
+    buffer = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        decoded = None
+        if ARRAY_ECHO_LINE.match(stripped):
+            try:
+                decoded = json.loads(stripped)
+            except ValueError:
+                decoded = None
+        if (
+            isinstance(decoded, list)
+            and decoded
+            and all(isinstance(item, str) for item in decoded)
+        ):
+            if buffer:
+                blocks.append("\n".join(buffer))
+                buffer = []
+            blocks.extend(item.strip() for item in decoded if item.strip())
+        else:
+            buffer.append(line)
+    if buffer:
+        blocks.append("\n".join(buffer))
+    parts = [
+        part.strip() for block in blocks for part in re.split(r"\n\s*\n", block) if part.strip()
+    ]
+    return parts or [text]
+
+
 # QQ built-in emoticon: OneBot CQ form [CQ:face,id=N], numeric [表情:N], and
 # named [表情:呲牙] (resolved via the face table). Unknown tokens are dropped:
 # sending guessed names verbatim reads as broken output.
@@ -141,9 +182,7 @@ class Sender:
                 # sentences although one message carries one thing. Honor the
                 # intended split like the double-encoded array decode above.
                 cleaned = without_duplicated_array_echo(values)
-                paragraphs = [
-                    part.strip() for part in re.split(r"\n\s*\n", cleaned) if part.strip()
-                ]
+                paragraphs = split_intended_segments(cleaned)
                 if len(paragraphs) > 4:
                     paragraphs = paragraphs[:3] + ["\n\n".join(paragraphs[3:])]
                 values = paragraphs if len(paragraphs) >= 2 else [cleaned]

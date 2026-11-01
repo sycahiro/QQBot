@@ -515,7 +515,7 @@ export function Memory({ ready }: { ready: boolean }) {
                                     >
                                         <button
                                             type="button"
-                                            className="memory-member-toggle"
+                                            className="disclosure-trigger memory-member-toggle"
                                             aria-expanded={open}
                                             disabled={busy}
                                             onClick={() => setExpanded(open ? null : member.userId)}

@@ -371,6 +371,20 @@ strong {
     font-weight: 600;
 }
 
+/* 操作按钮行基座：flex + 8px 基准间距。间距/对齐/换行差异写在各自修饰类，
+   不要在新页面重新声明 display:flex + gap。 */
+.archive-history-actions,
+.card-save-footer,
+.model-check-actions,
+.memory-member-tools,
+.record-detail-actions,
+.save-actions,
+.window-close-choices {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .desktop-sidebar {
     display: flex;
     flex-direction: column;
@@ -1159,8 +1173,6 @@ p.action-notice {
     min-width: 0;
 }
 .record-detail-actions {
-    display: flex;
-    gap: 8px;
     flex-shrink: 0;
 }
 .agent-split {
@@ -1210,8 +1222,6 @@ p.action-notice {
     min-width: 0;
 }
 .archive-history-actions {
-    display: flex;
-    gap: 8px;
     margin-bottom: 16px;
 }
 .archive-message-list {
@@ -1310,8 +1320,6 @@ p.action-notice {
     min-width: 0;
 }
 .card-save-footer {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
     gap: 18px;
     border-top: 1px solid var(--border);
@@ -1321,9 +1329,7 @@ p.action-notice {
     color: var(--muted-foreground);
 }
 .save-actions {
-    display: flex;
     flex-wrap: wrap;
-    align-items: center;
     gap: 12px;
 }
 .card-save-footer.save-actions {
@@ -1383,7 +1389,6 @@ p.action-notice {
     margin-top: 12px;
 }
 .window-close-choices {
-    display: flex;
     gap: 12px;
     margin-top: 24px;
 }
@@ -1932,8 +1937,6 @@ p.action-notice {
     max-width: 100%;
 }
 .model-check-actions {
-    display: flex;
-    align-items: center;
     flex-wrap: wrap;
     gap: 10px;
 }
@@ -2280,11 +2283,7 @@ p.action-notice {
     font-size: 14px;
 }
 .memory-member-toggle {
-    display: flex;
-    align-items: center;
     gap: 10px;
-    width: 100%;
-    text-align: left;
     padding: 0;
 }
 .memory-member-id {
@@ -2305,7 +2304,6 @@ p.action-notice {
     margin-top: 16px;
 }
 .memory-member-tools {
-    display: flex;
     justify-content: flex-end;
     margin-bottom: 12px;
 }

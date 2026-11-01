@@ -26,27 +26,47 @@ export function AnimatedList({
     const [ghosts, setGhosts] = useState<{ key: string; node: ReactNode }[]>([]);
     const lastEntries = useRef<Map<string, ReactNode>>(new Map());
     const timers = useRef(new Map<string, number>());
-    const signature = entries.map(getKey).join('\u0000');
-    useEffect(() => {
-        const current = new Map(entries.map((child) => [getKey(child), child] as const));
-        const previous = lastEntries.current;
+
+    // 幽灵行必须在移除发生的同一次提交里出现。若放到 useEffect 里，effect 在
+    // 浏览器绘制之后才跑：移除帧会先画出一帧“行已消失”，下一帧幽灵才补位
+    // 撑回原高再收起——肉眼看是内容跳一下再弹回（收起时闪一下）。因此 diff
+    // 在渲染期同步完成，React 会把渲染期 setState 合并进同一次提交。
+    const current = new Map(entries.map((child) => [getKey(child), child] as const));
+    const previous = lastEntries.current;
+    if (previous !== current) {
         lastEntries.current = current;
-        setGhosts((list) => {
-            const kept = list.filter((ghost) => current.has(ghost.key));
-            return kept.length === list.length ? list : kept;
-        });
+        const removed: { key: string; node: ReactNode }[] = [];
         for (const [key, node] of previous) {
-            if (current.has(key) || timers.current.has(key)) continue;
-            setGhosts((list) => [...list, { key, node }]);
-            timers.current.set(
-                key,
-                window.setTimeout(() => {
-                    timers.current.delete(key);
-                    setGhosts((list) => list.filter((ghost) => ghost.key !== key));
-                }, EXIT_MS),
-            );
+            if (!current.has(key) && !timers.current.has(key)) removed.push({ key, node });
         }
-    }, [signature]);
+        if (removed.length || ghosts.some((ghost) => current.has(ghost.key))) {
+            for (const ghost of ghosts) {
+                if (current.has(ghost.key)) {
+                    const timer = timers.current.get(ghost.key);
+                    if (timer !== undefined) {
+                        window.clearTimeout(timer);
+                        timers.current.delete(ghost.key);
+                    }
+                }
+            }
+            setGhosts((list) => {
+                const next = list.filter((ghost) => !current.has(ghost.key));
+                for (const item of removed) {
+                    if (!next.some((ghost) => ghost.key === item.key)) next.push(item);
+                }
+                return next;
+            });
+            for (const { key } of removed) {
+                timers.current.set(
+                    key,
+                    window.setTimeout(() => {
+                        timers.current.delete(key);
+                        setGhosts((list) => list.filter((ghost) => ghost.key !== key));
+                    }, EXIT_MS),
+                );
+            }
+        }
+    }
     useEffect(
         () => () => {
             for (const timer of timers.current.values()) window.clearTimeout(timer);
